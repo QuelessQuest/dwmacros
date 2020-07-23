@@ -1,0 +1,25 @@
+{
+  "name": "dwmacros",
+  "title": "DWMacros",
+  "description": "<p>Additional Scripts and Macros for Dungeon World</p>",
+  "version": "0.0.1",
+  "compatibleCoreVersion": "0.6.5",
+  "minimumCoreVersion": "0.6.0",
+  "author": "Quest",
+  "scripts": [],
+  "esmodules": [
+    "module/dwmacros.js",
+    "module/spellHelper.js",
+    "module/clericSpells.js",
+    "module/wizardSpells.js",
+    "module/commonSpells.js",
+    "module/druidMoves.js"
+  ],
+  "styles": [],
+  "packs": [],
+  "languages": [],
+  "socket": true,
+  "url": "https://github.com/Feu-Secret/Tokenmagic",
+  "manifest": "https://raw.githubusercontent.com/Feu-Secret/Tokenmagic/master/tokenmagic/module.json",
+  "download": "https://github.com/Feu-Secret/Tokenmagic/raw/master/Tokenmagic.zip"
+}
