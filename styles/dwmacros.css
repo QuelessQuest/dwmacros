@@ -1,0 +1,24 @@
+.dwmacros {
+    /* ----------------------------------------- */
+    /*  Element Styles                           */
+    /* ----------------------------------------- */
+    /* Form Groups */
+    /* Tags */
+}
+.dwmacros .dialog-buttons {
+    -ms-flex-direction: column;
+    flex-direction: column !important;
+}
+
+.dwmacros .dialog-buttons button {
+    margin: 5px 0 0 0;
+    text-align: left;
+}
+
+.dwmacros select {
+    width: 100%;
+}
+
+.dwmacros .bottom-margin {
+    margin-bottom: 10px;
+}

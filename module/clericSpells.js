@@ -4,11 +4,18 @@ import * as sh from './spellHelper.js'
  * ClericSpell
  * @param actorData
  * @param spellName
+ * @param target
  * @param post
  * @returns {Promise<*>}
  */
-export async function clericSpell({actorData: actorData, spellName: spellName, post: post}) {
+export async function clericSpell({actorData: actorData, spellName: spellName, target: target = false, post: post}) {
     if (actorData) {
+        if (target) {
+            if (game.user.targets.size === 0) {
+                ui.notifications.warn("Spell requires a target.");
+                return;
+            }
+        }
         let flavor = "Your casting succeeds, however you must select one of the following options.";
         let options = [
             {
@@ -44,7 +51,7 @@ export async function clericSpell({actorData: actorData, spellName: spellName, p
  */
 export async function cureLightWounds(actorData) {
     clericSpell({
-        actorData: actorData, spellName: "Cure Light Wounds", post: () => {
+        actorData: actorData, spellName: "Cure Light Wounds", target: true, post: () => {
             let template = "modules/dwmacros/templates/chat/spell-dialog.html";
             let glow =
                 [{

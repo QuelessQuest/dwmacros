@@ -4,11 +4,18 @@ import * as sh from './spellHelper.js'
  *
  * @param actorData
  * @param spellName
+ * @param target
  * @param post
  * @returns {Promise<void>}
  */
-export async function wizardSpell({actorData: actorData, spellName: spellName, post: post}) {
+export async function wizardSpell({actorData: actorData, spellName: spellName, target: target = false, post: post}) {
     if (actorData) {
+        if (target) {
+            if (game.user.targets.size === 0) {
+                ui.notifications.warn("Spell requires a target.");
+                return;
+            }
+        }
         let flavor = "Your casting succeeds, however you must select one of the following options.";
         let options = [
             {
@@ -35,19 +42,103 @@ export async function wizardSpell({actorData: actorData, spellName: spellName, p
     }
 }
 
+// FIRST LEVEL =======================================================================================
+
+/**
+ * MAGIC MISSILE
+ * @param actorData
+ * @returns {Promise<void>}
+ */
+export async function magicMissile(actorData) {
+    wizardSpell({
+        actorData: actorData, spellName: "Magic Missile", target: true, post: () => {
+            let template = "modules/dwmacros/templates/chat/spell-dialog.html";
+            let glow =
+                [{
+                    filterType: "outline",
+                    autoDestroy: true,
+                    padding: 10,
+                    color: 0xFFFFFF,
+                    thickness: 1,
+                    quality: 10,
+                    animated:
+                        {
+                            thickness:
+                                {
+                                    active: true,
+                                    loopDuration: 4000,
+                                    loops: 1,
+                                    animType: "syncCosOscillation",
+                                    val1: 1,
+                                    val2: 8
+                                }
+                        }
+                }];
+
+            let roll = new Roll("2d4", {});
+            roll.roll();
+            TokenMagic.addFiltersOnTargeted(glow);
+            roll.render().then(r => {
+                let templateData = {
+                    title: "title",
+                    flavor: "flavor",
+                    rollDw: r,
+                    style: ""
+                }
+                renderTemplate(template, templateData).then(content => {
+                    game.dice3d.showForRoll(roll).then(displayed => {
+                        let targetActor = game.user.targets.values().next().value.actor;
+
+                        if (targetActor.permission !== CONST.ENTITY_PERMISSIONS.OWNER)
+                            // We need help applying the damagee, so make a roll message for right-click convenience.
+                            roll.toMessage({
+                                speaker: ChatMessage.getSpeaker(),
+                                flavor: `${actorData.name} casts Magic Missle on ${targetActor.data.name}.<br>
+                            <p><em>Manually apply ${roll.total} HP of damage to ${targetActor.data.name}</em></p>`
+                            });
+                        else {
+                            // We can apply damage automatically, so just show a normal chat message.
+                            ChatMessage.create({
+                                speaker: ChatMessage.getSpeaker(),
+                                content: `${actorData.name} casts Magic Missle on ${targetActor.data.name} for ${roll.total} HP.<br>`
+                            });
+                            game.actors.find(a => a._id === targetActor._id).update({
+                                "data.attributes.hp.value": targetActor.data.data.attributes.hp.value - roll.total
+                            });
+                        }
+                    });
+                });
+            })
+        }
+    });
+}
+
+/**
+ * INVISIBILITY
+ * @param actorData
+ * @returns {Promise<void>}
+ */
 export async function invisibility(actorData) {
 
     let invFlag = {
         spell: "invisibility",
-        cancel: function () {
-            let token = canvas.tokens.controlled[0];
-            token.update({"hidden": false});
+        target: {},
+        cancel: function (target) {
+            target.update({"hidden": false});
         }
     };
 
     wizardSpell({actorData: actorData, spellName: "Invisibility", post: () => {
             let token = canvas.tokens.controlled[0];
-            token.update({"hidden": true});
+            let targetActor = {};
+            if (game.user.targets.size > 0) {
+                targetActor = game.user.targets.values().next().value.actor;
+                invFlag.target = targetActor;
+            } else {
+                targetActor = token;
+                invFlag.target = token;
+            }
+            targetActor.update({"hidden": true});
 
             let as = actorData.getFlag("world", "activeSpells");
             if (as) {
@@ -58,7 +149,6 @@ export async function invisibility(actorData) {
                 as = [invFlag];
             }
             actorData.setFlag("world", "activeSpells", as);
-            console.log(actorData);
         }
     });
 }

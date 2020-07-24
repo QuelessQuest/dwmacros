@@ -8,15 +8,16 @@ export async function light(actorData, spellType) {
 
     let lightFlag = {
         spell: "light",
-        cancel: function() {
-            let token = canvas.tokens.controlled[0];
-            token.update({"dimLight": 0, "brightLight": 0});
+        target: {},
+        cancel: function(target) {
+            target.update({"dimLight": 0, "brightLight": 0});
         }
     };
 
     spellType({
         actorData: actorData, spellName: "Light", post: () => {
             let token = canvas.tokens.controlled[0];
+            lightFlag.target = token;
             let d = new Dialog({
                 title: 'Light',
                 content:
@@ -40,7 +41,6 @@ export async function light(actorData, spellType) {
                                 as = [lightFlag];
                             }
                             actorData.setFlag("world", "activeSpells", as);
-                            console.log(actorData);
                         }
                     },
                     cancel: {

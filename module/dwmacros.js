@@ -18,6 +18,9 @@ export function DWMacros() {
         return cs.cureLightWounds(actorData);
     }
 
+    async function castMagicMissile(actorDaa) {
+        return ws.magicMissile(actorDaa);
+    }
     async function castInvisibility(actorData) {
         return ws.invisibility(actorData);
     }
@@ -38,7 +41,8 @@ export function DWMacros() {
         castWizardLight: castWizardLight,
         castCureLightWounds: castCureLightWounds,
         castInvisibility: castInvisibility,
-        druidShapshift: druidShapshift
+        druidShapshift: druidShapshift,
+        castMagicMissile: castMagicMissile
     }
 }
 

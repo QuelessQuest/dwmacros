@@ -13,9 +13,12 @@
     "module/clericSpells.js",
     "module/wizardSpells.js",
     "module/commonSpells.js",
-    "module/druidMoves.js"
+    "module/druidMoves.js",
+    "module/objects/spell-casting-dialog.js"
   ],
-  "styles": [],
+  "styles": [
+    "styles/dwmacros.css"
+  ],
   "packs": [],
   "languages": [],
   "socket": true,

@@ -1,7 +1,7 @@
-import * as cmn from './commonSpells.js'
+import SpellCastingDialog from "./objects/spell-casting-dialog.js";
 
 /**
- *
+ * Cast Spell
  * @param actorData
  * @param dialogFlavor
  * @param flavor
@@ -74,7 +74,7 @@ export async function castSpell({
             let opt3 = options.shift();
             templateData.style = "background: rgba(255, 255, 0, 0.1)";
             return new Promise(resolve => {
-                new Dialog({
+                new SpellCastingDialog({
                     title: title,
                     content: dialogFlavor,
                     buttons: {
@@ -130,7 +130,7 @@ export async function dropSpell(actorData) {
     const content = await renderTemplate("modules/dwmacros/templates/cancelSpell.html", templateData);
     let spell = await new Promise((resolve, reject) => {
         new Dialog({
-            title: "Distance",
+            title: "Cancel An Active Spell",
             content: content,
             default: 'ok',
             buttons: {
@@ -151,9 +151,7 @@ export async function dropSpell(actorData) {
     });
 
     let as = activeSpells.find(x => x.spell === spell);
-    console.log(as);
-    as.cancel();
+    as.cancel(as.target);
     let filtered = activeSpells.filter(e => e.spell !== 'light');
     actorData.setFlag("world", "activeSpells", filtered);
-    console.log(actorData);
 }
