@@ -1,4 +1,5 @@
 import * as sh from './spellHelper.js'
+import {Projectile} from "./objects/Projectile.js";
 
 /**
  *
@@ -47,6 +48,7 @@ export async function magicMissile(actorData) {
     sh.validateSpell({actorData: actorData, spell: "Magic Missile", target: true}).then(v => {
         if (!v) return;
 
+        let token = canvas.tokens.controlled[0]
         wizardSpell({
             actorData: actorData, spellName: "Magic Missile", target: true, post: () => {
                 let template = "modules/dwmacros/templates/chat/spell-dialog.html";
@@ -56,10 +58,13 @@ export async function magicMissile(actorData) {
                     time: 0,
                     blend: 1,
                     intensity: 5,
+                    autoDestroy: true,
                     animated: {
                         time: {
                             active: true,
                             speed: 0.0020,
+                            loopDuration: 1500,
+                            loops: 1,
                             animType: "move"
                         }
                     }
@@ -67,7 +72,6 @@ export async function magicMissile(actorData) {
 
                 let roll = new Roll("2d4", {});
                 roll.roll();
-                TokenMagic.addFiltersOnTargeted(missile);
                 roll.render().then(r => {
                     let templateData = {
                         title: "title",
@@ -77,25 +81,28 @@ export async function magicMissile(actorData) {
                     }
                     renderTemplate(template, templateData).then(content => {
                         game.dice3d.showForRoll(roll).then(displayed => {
-                            let targetActor = game.user.targets.values().next().value.actor;
-
-                            if (targetActor.permission !== CONST.ENTITY_PERMISSIONS.OWNER)
-                                // We need help applying the damagee, so make a roll message for right-click convenience.
-                                roll.toMessage({
-                                    speaker: ChatMessage.getSpeaker(),
-                                    flavor: `${actorData.name} casts Magic Missle on ${targetActor.data.name}.<br>
-                            <p><em>Manually apply ${roll.total} HP of damage to ${targetActor.data.name}</em></p>`
-                                });
-                            else {
-                                // We can apply damage automatically, so just show a normal chat message.
-                                ChatMessage.create({
-                                    speaker: ChatMessage.getSpeaker(),
-                                    content: `${actorData.name} casts Magic Missle on ${targetActor.data.name} for ${roll.total} HP.<br>`
-                                });
-                                game.actors.find(a => a._id === targetActor._id).update({
-                                    "data.attributes.hp.value": targetActor.data.data.attributes.hp.value - roll.total
-                                });
-                            }
+                            let targetToken = game.user.targets.values().next().value;
+                            let targetActor = targetToken.actor;
+                            sh.launchProjectile(token, targetToken, "modules/dwmacros/assets/mm.png").then(() => {
+                                TokenMagic.addFiltersOnTargeted(missile);
+                                if (targetActor.permission !== CONST.ENTITY_PERMISSIONS.OWNER)
+                                    // We need help applying the damagee, so make a roll message for right-click convenience.
+                                    roll.toMessage({
+                                        speaker: ChatMessage.getSpeaker(),
+                                        flavor: `${actorData.name} casts Magic Missle on ${targetActor.data.name}.<br>
+                                                 <p><em>Manually apply ${roll.total} HP of damage to ${targetActor.data.name}</em></p>`
+                                    });
+                                else {
+                                    // We can apply damage automatically, so just show a normal chat message.
+                                    ChatMessage.create({
+                                        speaker: ChatMessage.getSpeaker(),
+                                        content: `${actorData.name} casts Magic Missle on ${targetActor.data.name} for ${roll.total} HP.<br>`
+                                    });
+                                    game.actors.find(a => a._id === targetActor._id).update({
+                                        "data.attributes.hp.value": targetActor.data.data.attributes.hp.value - roll.total
+                                    });
+                                }
+                            });
                         });
                     });
                 })

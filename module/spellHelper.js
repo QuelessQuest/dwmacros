@@ -208,3 +208,21 @@ export async function setSpells(actorData) {
     }
     console.log(spells);
 }
+
+export async function launchProjectile(sourceToken, targetToken, img) {
+    let projectile = await Token.create({
+        name: "pp",
+        img: img,
+        scale: 0.5,
+        x: sourceToken.x,
+        y: sourceToken.y,
+        elevation: 0,
+        lockRotation: false,
+        rotation: 0,
+        effects: [],
+        vision: false
+    });
+    await projectile.setPosition(sourceToken.x, sourceToken.y, {animate: false});
+    await projectile.setPosition(targetToken.x, targetToken.y);
+    projectile.delete();
+}

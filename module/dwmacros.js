@@ -35,6 +35,15 @@ export function DWMacros() {
         return dm.shapeshift();
     }
 
+
+    async function showActor(actorData) {
+        console.log(actorData);
+        console.log(game.user.targets.values());
+    }
+    async function showToken() {
+        console.log(canvas.tokens.controlled[0]);
+    }
+
     return {
         cancelSpell: cancelSpell,
         castClericLight: castClericLight,
@@ -44,6 +53,8 @@ export function DWMacros() {
         druidShapshift: druidShapshift,
         castMagicMissile: castMagicMissile,
         prepareSpells: prepareSpells,
+        showToken: showToken,
+        showActor: showActor
     }
 }
 
