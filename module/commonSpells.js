@@ -8,16 +8,16 @@ export async function light(actorData, spellType) {
 
     let lightFlag = {
         spell: "light",
-        target: {},
-        cancel: function(target) {
-            target.update({"dimLight": 0, "brightLight": 0});
+        target: null,
+        cancel: function(thing) {
+            thing.update({"dimLight": 0, "brightLight": 0});
         }
     };
 
     spellType({
         actorData: actorData, spellName: "Light", post: () => {
             let token = canvas.tokens.controlled[0];
-            lightFlag.target = token;
+            lightFlag.target = token.uuid;
             let d = new Dialog({
                 title: 'Light',
                 content:

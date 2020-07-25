@@ -53,31 +53,22 @@ export async function magicMissile(actorData) {
     wizardSpell({
         actorData: actorData, spellName: "Magic Missile", target: true, post: () => {
             let template = "modules/dwmacros/templates/chat/spell-dialog.html";
-            let glow =
-                [{
-                    filterType: "outline",
-                    autoDestroy: true,
-                    padding: 10,
-                    color: 0xFFFFFF,
-                    thickness: 1,
-                    quality: 10,
-                    animated:
-                        {
-                            thickness:
-                                {
-                                    active: true,
-                                    loopDuration: 4000,
-                                    loops: 1,
-                                    animType: "syncCosOscillation",
-                                    val1: 1,
-                                    val2: 8
-                                }
-                        }
-                }];
+            let missile = [{
+                filterType: "electric",
+                color: 0xFFFFFF,
+                time: 0,
+                blend: 1,
+                intensity: 5,
+                animated: {
+                    time: {
+                        active: true,
+                        speed: 0.0020,
+                        animType: "move"}}
+            }];
 
             let roll = new Roll("2d4", {});
             roll.roll();
-            TokenMagic.addFiltersOnTargeted(glow);
+            TokenMagic.addFiltersOnTargeted(missile);
             roll.render().then(r => {
                 let templateData = {
                     title: "title",
@@ -119,24 +110,62 @@ export async function magicMissile(actorData) {
  * @returns {Promise<void>}
  */
 export async function invisibility(actorData) {
+    /*
+    let params =
+        [{
+            filterType: "distortion",
+            maskPath: "/modules/tokenmagic/fx/assets/waves-2.png",
+            maskSpriteScaleX: 7,
+            maskSpriteScaleY: 7,
+            padding: 50,
+            animated:
+                {
+                    maskSpriteX: { active: true, speed: 0.05, animType: "move" },
+                    maskSpriteY: { active: true, speed: 0.07, animType: "move" }
+                }
+        },
+            {
+                filterType: "glow",
+                distance: 10,
+                outerStrength: 8,
+                innerStrength: 0,
+                color: 0xD6E6C3,
+                quality: 0.5,
+                animated:
+                    {
+                        color:
+                            {
+                                active: true,
+                                loopDuration: 3000,
+                                animType: "colorOscillation",
+                                val1:0xD6E6C3,
+                                val2:0xCDCFB7
+                            }
+                    }
+            }
+        ];
 
+    TokenMagic.addFiltersOnSelected(params);
+
+     */
     let invFlag = {
         spell: "invisibility",
-        target: {},
+        target: null,
         cancel: function (target) {
             target.update({"hidden": false});
         }
     };
 
-    wizardSpell({actorData: actorData, spellName: "Invisibility", post: () => {
+    wizardSpell({
+        actorData: actorData, spellName: "Invisibility", post: () => {
             let token = canvas.tokens.controlled[0];
             let targetActor = {};
             if (game.user.targets.size > 0) {
                 targetActor = game.user.targets.values().next().value.actor;
-                invFlag.target = targetActor;
+                invFlag.target = targetActor.uuid;
             } else {
                 targetActor = token;
-                invFlag.target = token;
+                invFlag.target = token.uuid;
             }
             targetActor.update({"hidden": true});
 
@@ -149,6 +178,7 @@ export async function invisibility(actorData) {
                 as = [invFlag];
             }
             actorData.setFlag("world", "activeSpells", as);
+            //TokenMagic.deleteFiltersOnSelected();
         }
     });
 }

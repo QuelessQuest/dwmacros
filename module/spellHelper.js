@@ -29,7 +29,7 @@ export async function castSpell({
                                 } = {}) {
 
     let baseFormula = '2d6';
-    let castingData = actorData.items.find(i => i.name === "Cast A Spell");
+    let castingData = actorData.items.find(i => i.name.toLowerCase() === "Cast A Spell".toLowerCase());
     let ability = castingData.data.data.rollType.toLowerCase();
     speaker = speaker || ChatMessage.getSpeaker();
     let mod = castingData.data.data.rollMod;
@@ -150,8 +150,13 @@ export async function dropSpell(actorData) {
         }).render(true);
     });
 
+    // Remove from active list
     let as = activeSpells.find(x => x.spell === spell);
-    as.cancel(as.target);
-    let filtered = activeSpells.filter(e => e.spell !== 'light');
+    let filtered = activeSpells.filter(e => e.spell !== spell);
     actorData.setFlag("world", "activeSpells", filtered);
+
+    // Call spells cancel function for the target
+    let tokens = canvas.tokens.objects.children;
+    let tt = tokens.find(c => c.uuid === as.target);
+    as.cancel(tt);
 }
