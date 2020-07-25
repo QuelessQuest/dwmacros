@@ -25,10 +25,10 @@ export function DWMacros() {
         return ws.invisibility(actorData);
     }
     async function cancelSpell(actorData) {
-        return sh.dropSpell(actorData).then(s => {
-            console.log("AFTER");
-            console.log(s);
-        })
+        return sh.dropSpell(actorData);
+    }
+    async function prepareSpells(actorData) {
+        sh.setSpells(actorData);
     }
 
     async function druidShapshift() {
@@ -42,7 +42,8 @@ export function DWMacros() {
         castCureLightWounds: castCureLightWounds,
         castInvisibility: castInvisibility,
         druidShapshift: druidShapshift,
-        castMagicMissile: castMagicMissile
+        castMagicMissile: castMagicMissile,
+        prepareSpells: prepareSpells,
     }
 }
 

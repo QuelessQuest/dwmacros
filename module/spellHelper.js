@@ -12,6 +12,7 @@ import SpellCastingDialog from "./objects/spell-casting-dialog.js";
  * @param options
  * @param dialogOptions
  * @param post
+ * @param fail
  * @returns {Promise<void>}
  */
 export async function castSpell({
@@ -25,6 +26,8 @@ export async function castSpell({
                                     options = [],
                                     dialogOptions = {},
                                     post = () => {
+                                    },
+                                    fail = () => {
                                     }
                                 } = {}) {
 
@@ -67,13 +70,14 @@ export async function castSpell({
             renderTemplate(template, templateData).then(content => {
                 chatData.content = content;
                 ChatMessage.create(chatData);
+                fail();
             });
         } else {
             let opt1 = options.shift();
             let opt2 = options.shift();
             let opt3 = options.shift();
             templateData.style = "background: rgba(255, 255, 0, 0.1)";
-            return new Promise(resolve => {
+            let z = new Promise(resolve => {
                 new SpellCastingDialog({
                     title: title,
                     content: dialogFlavor,
@@ -112,6 +116,8 @@ export async function castSpell({
                                     ChatMessage.create(chatData);
                                     post();
                                 });
+                                let spellItem = actorData.items.find(i => i.name.toLowerCase() === title.toLowerCase());
+                                spellItem.data.data.prepared = false;
                             }
                         }
                     },
@@ -153,10 +159,52 @@ export async function dropSpell(actorData) {
     // Remove from active list
     let as = activeSpells.find(x => x.spell === spell);
     let filtered = activeSpells.filter(e => e.spell !== spell);
-    actorData.setFlag("world", "activeSpells", filtered);
+    await actorData.setFlag("world", "activeSpells", filtered);
 
     // Call spells cancel function for the target
     let tokens = canvas.tokens.objects.children;
     let tt = tokens.find(c => c.uuid === as.target);
     as.cancel(tt);
+}
+
+export async function setActiveSpell(actorData, spell, data) {
+    let as = actorData.getFlag("world", "activeSpells");
+    if (as) {
+        if (!as.find(x => x.spell === spell)) {
+            as.push(data);
+        }
+    } else {
+        as = [data];
+    }
+    actorData.setFlag("world", "activeSpells", as);
+}
+
+export async function validateSpell({actorData: actorData, spell: spell, target: target}) {
+    let hasSpell = actorData.items.find(i => i.name.toLowerCase() === spell.toLowerCase());
+    if (hasSpell === null) {
+        ui.notifications.warn(`${actorData.name} does not know how to cast ${spell}`);
+        return false;
+    }
+    if (hasSpell.data.data.prepared) {
+        if (target) {
+            if (game.user.targets.size === 0) {
+                ui.notifications.warn("Spell requires a target.");
+                return false;
+            }
+        }
+        return true;
+    } else {
+        ui.notifications.warn(`${actorData.name} does not have ${spell} prepared`);
+        return false;
+    }
+}
+
+export async function setSpells(actorData) {
+    let spellItems = actorData.items.filter(i => i.type === "spell");
+    let spells = [];
+    let idx = 0;
+    for (idx = 0; idx < 10; idx++) {
+        spells.push(spellItems.filter(l => l.data.data.spellLevel === idx).map(n => n.name));
+    }
+    console.log(spells);
 }
