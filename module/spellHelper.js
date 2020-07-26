@@ -200,13 +200,86 @@ export async function validateSpell({actorData: actorData, spell: spell, target:
 }
 
 export async function setSpells(actorData) {
+
     let spellItems = actorData.items.filter(i => i.type === "spell");
-    let spells = [];
+    let lvlTotal = parseInt(actorData.data.data.attributes.level.value) + 1;
     let idx = 0;
+    let templateData = {
+        rotes: [],
+        spellData: []
+    };
     for (idx = 0; idx < 10; idx++) {
-        spells.push(spellItems.filter(l => l.data.data.spellLevel === idx).map(n => n.name));
+        let spells = spellItems.filter(l => l.data.data.spellLevel === idx).map(n => n.name)
+        if (idx === 0) {
+            templateData.rotes = spells;
+        } else if (spells.length > 0) {
+            templateData.spellData.push({lvl: idx, spells: spells});
+        }
     }
-    console.log(spells);
+
+    const content = await renderTemplate("modules/dwmacros/templates/prepareSpells.html", templateData);
+    let p = await new Promise(resolve => {
+        new Dialog({
+            title: "Prepare Spells",
+            content: content,
+            buttons: {
+                prepare: {
+                    icon: `<i class="fas fa-scroll"></i>`,
+                    label: "Prepare",
+                    callback: html => {
+                        resolve(
+                            html.find('input'));
+                    }
+                },
+                cancel: {
+                    icon: '<i class="fas fa-times"></i>',
+                    label: "Cancel",
+                    callback: resolve
+                },
+            },
+            close: resolve
+        }).render(true);
+    });
+    let pLvls = 0;
+    let pSpells = [];
+    let upSpells = [];
+    for (let idx = 0; idx < p.length; idx++) {
+        if (p[idx].checked) {
+            pSpells.push(p[idx].name);
+            pLvls += parseInt(p[idx].value);
+        } else {
+            upSpells.push(p[idx].name);
+        }
+
+    }
+    if (pLvls > lvlTotal) {
+        ui.notifications.warn(`${actorData.name} can only prepare ${lvlTotal} levels of spells`);
+    } else {
+        pSpells.forEach(ps => {
+            let spell = actorData.data.items.find(i => i.name === ps);
+            let sId = spell._id;
+            const item = actorData.getOwnedItem(sId);
+            if (item) {
+                let updatedItem = duplicate(item);
+                updatedItem.data.prepared = true;
+                actorData.updateOwnedItem(updatedItem);
+            }
+        });
+        upSpells.forEach(ups => {
+            let spell = actorData.data.items.find(i => i.name === ups);
+            let sId = spell._id;
+            const item = actorData.getOwnedItem(sId);
+            if (item) {
+                let updatedItem = duplicate(item);
+                updatedItem.data.prepared = false;
+                actorData.updateOwnedItem(updatedItem);
+            }
+        });
+        ChatMessage.create({
+            speaker: ChatMessage.getSpeaker(),
+            content: `${actorData.name} has finished preparing spells.<br>`
+        });
+    }
 }
 
 export async function launchProjectile(sourceToken, targetToken, img) {

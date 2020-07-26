@@ -1,5 +1,4 @@
 import * as sh from './spellHelper.js'
-import {Projectile} from "./objects/Projectile.js";
 
 /**
  *

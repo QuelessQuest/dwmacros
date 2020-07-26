@@ -5,20 +5,58 @@
     /* Form Groups */
     /* Tags */
 }
+
 .dwmacros .dialog-buttons {
     -ms-flex-direction: column;
-    flex-direction: column !important;
+    flex-direction: column;
+}
+
+.dwmacros .dialog-buttons .prepareSpells {
+    -ms-flex-direction: row;
+    flex-direction: row;
 }
 
 .dwmacros .dialog-buttons button {
     margin: 5px 0 0 0;
+    justify-content: left;
     text-align: left;
 }
 
-.dwmacros select {
-    width: 100%;
+.dwmacros .horiz .dialog-buttons button {
+    margin: 0 10px 0 0;
+    justify-content: left;
+    text-align: left;
+}
+
+.dwmacros .select {
+    width: 100% !important;
 }
 
 .dwmacros .bottom-margin {
     margin-bottom: 10px;
+}
+
+.dwmacros .prepSpell {
+    align-items: center;
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-orient: horizontal;
+    -webkit-box-direction: normal;
+    -ms-flex-direction: row;
+    flex-direction: row;
+    -ms-flex-wrap: wrap;
+    flex-wrap: wrap;
+    -webkit-box-align: stretch;
+    -ms-flex-align: stretch;
+    -webkit-box-pack: justify;
+    -ms-flex-pack: justify;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.dwmacros .cell__title {
+    font-family: "Metamorphous", serif;
+    font-weight: bold;
+    font-size: 16px;
 }

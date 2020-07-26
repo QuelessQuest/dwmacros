@@ -38,7 +38,6 @@ export function DWMacros() {
 
     async function showActor(actorData) {
         console.log(actorData);
-        console.log(game.user.targets.values());
     }
     async function showToken() {
         console.log(canvas.tokens.controlled[0]);
