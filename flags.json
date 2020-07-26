@@ -1,0 +1,36 @@
+[
+  {
+    "name": "activeSpells",
+    "data": {
+      "spell": "name",
+      "target": "{}",
+      "cancel": "() => {}"
+    }
+  },
+  {
+    "name": "ongoing",
+    "data": "an integer number",
+    "definition": "Ongoing penalty for casting spells"
+  },
+  {
+    "name": "sustained",
+    "data": [
+      {
+        "spell": "spell name",
+        "value": "-1"
+      }
+    ],
+    "definition": "Penalties for sustaining a spell"
+  },
+  {
+    "name": "forward",
+    "data": [
+      {
+        "giver": "blass",
+        "type": "combat|skill|etc",
+        "value": 1
+      }
+    ],
+    "definition": "Bonus going forward"
+  }
+]

@@ -1,4 +1,13 @@
-export async function shapeshift() {
+/**
+ * Provides a dialog to chose a new shape. Token image will be updated to reflect the selection.
+ * @returns {Promise<void>}
+ */
+export async function shapeshift(actorData) {
+    let canDo = actorData.items.find(i => i.name === "Shapeshifter");
+    if (canDo === null) {
+        ui.notifications.warn(`${actorData.name} does not know how to Shapeshift!`);
+        return;
+    }
 
     let params =
         [{

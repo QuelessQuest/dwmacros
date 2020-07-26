@@ -2,6 +2,7 @@ import * as sh from './spellHelper.js'
 
 /**
  * ClericSpell
+ * Used to cast all Cleric Spells. Provides the Success with Consequences dialog if necessary
  * @param actorData
  * @param spellName
  * @param target
@@ -42,6 +43,94 @@ export async function clericSpell({actorData: actorData, spellName: spellName, t
 }
 
 // FIRST LEVEL =======================================================================================
+
+/**
+ * BLESS
+ * @param actorData
+ * @returns {Promise<void>}
+ */
+export async function bless(actorData) {
+    sh.validateSpell({actorData: actorData, spell: "Bless"}).then(v => {
+        if (!v) return;
+
+        let bGlow = [
+            {
+                filterType: "zapshadow",
+                alphaTolerance: 0.60
+            },
+            {
+                filterType: "outline",
+                padding: 10,
+                color: 0xACC1C6,
+                thickness: 1,
+                quality: 10,
+                animated:
+                    {
+                        thickness:
+                            {
+                                active: true,
+                                loopDuration: 10000,
+                                animType: "syncCosOscillation",
+                                val1: 2,
+                                val2: 6
+                            }
+                    }
+            }];
+        let token = canvas.tokens.controlled[0];
+        let targetToken = {};
+        if (game.user.targets.size > 0) {
+            targetToken = game.user.targets.values().next().value.actor;
+        } else {
+            targetToken = token;
+        }
+        TokenMagic.addFilters(targetToken, bGlow);
+
+        let blessFlag = {
+            spell: "bless",
+            target: targetToken.id,
+            cancel: function (actorData, target) {
+                // Remove penalty for sustaining the spell
+                let sus = actorData.getFlag("world", "sustained");
+                let filtered = sus.filter(e => e.name !== "bless");
+                actorData.setFlag("world", "activeSpells", filtered);
+
+                // Remove bonus from target
+                let ff = target.getFlag("world", "forward");
+                let fFiltered = ff.fillAlpha(f => f.type !== "bless");
+                target.setFlag("world", "forward", fFiltered);
+
+                // Cancel the animated effect
+                TokenMagic.deleteFilters(target);
+            }
+        };
+
+        clericSpell({
+            actorData: actorData, spellName: "Bless", post: () => {
+                let token = canvas.tokens.controlled[0];
+                let targetToken = {};
+                if (game.user.targets.size > 0) {
+                    targetToken = game.user.targets.values().next().value.actor;
+                } else {
+                    targetToken = token;
+                }
+
+                sh.setActiveSpell(actorData, "bless", blessFlag);
+                sh.setSustained(actorData, "bless", -1);
+                sh.setForward(targetToken, "bless", 1);
+            },
+            fail: () => {
+                let token = canvas.tokens.controlled[0];
+                let targetToken = {};
+                if (game.user.targets.size > 0) {
+                    targetToken = game.user.targets.values().next().value.actor;
+                } else {
+                    targetToken = token;
+                }
+                TokenMagic.deleteFilters(targetToken);
+            }
+        });
+    });
+}
 
 /**
  * CURE LIGHT WOUNDS

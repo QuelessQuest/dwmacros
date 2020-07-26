@@ -2,6 +2,7 @@ import SpellCastingDialog from "./objects/spell-casting-dialog.js";
 
 /**
  * Cast Spell
+ * The basic mechanics for casting a spell and showing the results
  * @param actorData
  * @param dialogFlavor
  * @param flavor
@@ -38,11 +39,10 @@ export async function castSpell({
     let mod = castingData.data.data.rollMod;
     let ongoing = actorData.getFlag("world", "ongoing");
     let abilityMod = actorData.data.data.abilities[ability].mod;
-    let formula = "";
+    let formula = `${baseFormula}+${abilityMod}`;
     if (ongoing) {
-        formula = `${baseFormula}+${abilityMod}+${ongoing}`;
+        formula += `+${ongoing}`;
     } else {
-        formula = `${baseFormula}+${abilityMod}`;
         ongoing = 0;
     }
     if (mod && mod != 0) {
@@ -147,6 +147,12 @@ export async function castSpell({
     });
 }
 
+/**
+ * DROP SPELL
+ * Will cancel the selected active spell according to the spells cancel function
+ * @param actorData
+ * @returns {Promise<void>}
+ */
 export async function dropSpell(actorData) {
     let activeSpells = actorData.getFlag("world", "activeSpells");
     let templateData = {
@@ -182,10 +188,47 @@ export async function dropSpell(actorData) {
 
     // Call spells cancel function for the target
     let tokens = canvas.tokens.objects.children;
-    let tt = tokens.find(c => c.uuid === as.target);
-    as.cancel(tt);
+    let tt = tokens.find(c => c.id === as.target);
+    as.cancel(actorData, tt);
 }
 
+/**
+ * SET SUSTAINED
+ * Sets a penalty that will be applied to all other casting rolls made by this actor
+ * @param actorData
+ * @param spell
+ * @param value
+ * @returns {Promise<void>}
+ */
+export async function setSustained(actorData, spell, value) {
+    let sus = actorData.getFlag("world", "sustained");
+    let susFlagItem = {
+        name: spell,
+        value: value
+    };
+    if (sus) {
+        let f = sus.find(x => x.spell === spell);
+        if (!f) {
+            sus.push(susFlagItem);
+        } else {
+            susFlagItem.value += f.value;
+            let newSus = sus.filter(x=> x.spell !== spell);
+            newSus.push(susFlagItem);
+            sus = newSus;
+        }
+    } else {
+        sus = [susFlagItem];
+    }
+    actorData.setFlag("world", "sustained", sus);
+}
+
+/**
+ * SET ONGOING
+ * Set an ongoing casting penalty that won't go away until spells are prepared again.
+ * @param actorData
+ * @param value
+ * @returns {Promise<void>}
+ */
 export async function setOngoing(actorData, value) {
     let ongoing = actorData.getFlag("world", "ongoing");
     if (ongoing) {
@@ -196,6 +239,14 @@ export async function setOngoing(actorData, value) {
     actorData.setFlag("world", "ongoing", ongoing);
 }
 
+/**&
+ * SET ACTIVE SPELL
+ * Adds the spell to the list of currently active spells. This list is used when a spell is to be canceled.
+ * @param actorData
+ * @param spell
+ * @param data
+ * @returns {Promise<void>}
+ */
 export async function setActiveSpell(actorData, spell, data) {
     let as = actorData.getFlag("world", "activeSpells");
     if (as) {
@@ -208,6 +259,36 @@ export async function setActiveSpell(actorData, spell, data) {
     actorData.setFlag("world", "activeSpells", as);
 }
 
+/**
+ * SET FORWARD
+ * Set the 'going forward' bonus for an actor
+ * @param target
+ * @param type
+ * @param value
+ * @returns {Promise<void>}
+ */
+export async function setForward(target, type, value) {
+    let flag = target.getFlag("world", "forward");
+    let flagData = {
+        type: type,
+        value: value
+    };
+    if (flag) {
+       flag.push(flagData)
+    } else {
+        flag = [flagData];
+    }
+    await target.setFlag("world", "forward", flag);
+}
+
+/**
+ * VALIDATE SPELL
+ * Checks: Is the spell known? Is the spell prepared? Are they barred from any casting?
+ * @param actorData
+ * @param spell
+ * @param target
+ * @returns {Promise<boolean>}
+ */
 export async function validateSpell({actorData: actorData, spell: spell, target: target}) {
     let hasSpell = actorData.items.find(i => i.name.toLowerCase() === spell.toLowerCase());
     if (hasSpell === null) {
@@ -221,13 +302,41 @@ export async function validateSpell({actorData: actorData, spell: spell, target:
                 return false;
             }
         }
-        return true;
+        let message = await barredFromCasting(actorData);
+        if (message === "ok") {
+            return true;
+        } else {
+            ui.notifications.warn(message);
+            return false;
+        }
     } else {
         ui.notifications.warn(`${actorData.name} does not have ${spell} prepared`);
         return false;
     }
 }
 
+/**
+ * BARRED FROM CASTING
+ * Determines if any spells can be cast (e.g. if invisibility is currently active)
+ * @param actorData
+ * @returns {Promise<string>}
+ */
+async function barredFromCasting(actorData) {
+    let as = actorData.getFlag("world", "activeSpells");
+    if (as) {
+        if (as.find(x => x.spell === "invisibility")) {
+            return "Cannot cast a spell while Invisibility is being maintained";
+        }
+    }
+    return "ok";
+}
+
+/**
+ * SET SPELLS
+ * Provides a dialog that allows for selecting prepared spells.
+ * @param actorData
+ * @returns {Promise<void>}
+ */
 export async function setSpells(actorData) {
 
     let spellItems = actorData.items.filter(i => i.type === "spell");
@@ -312,6 +421,14 @@ export async function setSpells(actorData) {
     }
 }
 
+/**
+ * LAUNCH PROJECTILE
+ * Provides an animation of the provided image from the caster to the target.
+ * @param sourceToken
+ * @param targetToken
+ * @param img
+ * @returns {Promise<void>}
+ */
 export async function launchProjectile(sourceToken, targetToken, img) {
     let projectile = await Token.create({
         name: "pp",

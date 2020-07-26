@@ -14,6 +14,9 @@ export function DWMacros() {
         return cmn.light(actorData, ws.wizardSpell);
     }
 
+    async function castBless(actorData) {
+        return cs.bless(actorData);
+    }
     async function castCureLightWounds(actorData) {
         return cs.cureLightWounds(actorData);
     }
@@ -31,8 +34,8 @@ export function DWMacros() {
         sh.setSpells(actorData);
     }
 
-    async function druidShapshift() {
-        return dm.shapeshift();
+    async function druidShapshift(actorData) {
+        return dm.shapeshift(actorData);
     }
 
 
@@ -47,6 +50,7 @@ export function DWMacros() {
         cancelSpell: cancelSpell,
         castClericLight: castClericLight,
         castWizardLight: castWizardLight,
+        castBless: castBless,
         castCureLightWounds: castCureLightWounds,
         castInvisibility: castInvisibility,
         druidShapshift: druidShapshift,
