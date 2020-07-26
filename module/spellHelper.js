@@ -36,7 +36,15 @@ export async function castSpell({
     let ability = castingData.data.data.rollType.toLowerCase();
     speaker = speaker || ChatMessage.getSpeaker();
     let mod = castingData.data.data.rollMod;
-    let formula = `${baseFormula}+${actorData.data.data.abilities[ability].mod}`;
+    let ongoing = actorData.getFlag("world", "ongoing");
+    let abilityMod = actorData.data.data.abilities[ability].mod;
+    let formula = "";
+    if (ongoing) {
+        formula = `${baseFormula}+${abilityMod}+${ongoing}`;
+    } else {
+        formula = `${baseFormula}+${abilityMod}`;
+        ongoing = 0;
+    }
     if (mod && mod != 0) {
         formula += `+${mod}`;
     }
@@ -48,6 +56,10 @@ export async function castSpell({
     let templateData = {
         title: title,
         flavor: flavor,
+        ability: ability.charAt(0).toUpperCase() + ability.slice(1),
+        mod: abilityMod,
+        ongoing: ongoing,
+        sustained: 0,
         rollDw: await cRoll.render(),
         style: ""
     }
@@ -104,6 +116,7 @@ export async function castSpell({
                                     ChatMessage.create(chatData);
                                     post();
                                 });
+                                setOngoing(actorData, -1);
                             }
                         },
                         opt3: {
@@ -116,8 +129,14 @@ export async function castSpell({
                                     ChatMessage.create(chatData);
                                     post();
                                 });
-                                let spellItem = actorData.items.find(i => i.name.toLowerCase() === title.toLowerCase());
-                                spellItem.data.data.prepared = false;
+                                let spell = actorData.data.items.find(i => i.name.toLowerCase() === title.toLowerCase());
+                                let sId = spell._id;
+                                const item = actorData.getOwnedItem(sId);
+                                if (item) {
+                                    let updatedItem = duplicate(item);
+                                    updatedItem.data.prepared = true;
+                                    actorData.updateOwnedItem(updatedItem);
+                                }
                             }
                         }
                     },
@@ -165,6 +184,16 @@ export async function dropSpell(actorData) {
     let tokens = canvas.tokens.objects.children;
     let tt = tokens.find(c => c.uuid === as.target);
     as.cancel(tt);
+}
+
+export async function setOngoing(actorData, value) {
+    let ongoing = actorData.getFlag("world", "ongoing");
+    if (ongoing) {
+        ongoing += value;
+    } else {
+        ongoing = value;
+    }
+    actorData.setFlag("world", "ongoing", ongoing);
 }
 
 export async function setActiveSpell(actorData, spell, data) {
@@ -275,6 +304,7 @@ export async function setSpells(actorData) {
                 actorData.updateOwnedItem(updatedItem);
             }
         });
+        actorData.setFlag("world", "ongoing", null);
         ChatMessage.create({
             speaker: ChatMessage.getSpeaker(),
             content: `${actorData.name} has finished preparing spells.<br>`
