@@ -1,4 +1,5 @@
 import * as sh from './spellHelper.js'
+import * as util from './dwUtils.js'
 
 /**
  * ClericSpell
@@ -51,7 +52,8 @@ export async function guidance(actorData) {
         clericSpell({
             actorData: actorData, spellName: "Guidance", post: () => {
 
-            }});
+            }
+        });
     });
 }
 
@@ -62,7 +64,8 @@ export async function sanctify(actorData) {
         clericSpell({
             actorData: actorData, spellName: "Sanctify", post: () => {
 
-            }});
+            }
+        });
     });
 }
 
@@ -101,7 +104,7 @@ export async function bless(actorData) {
                     }
             }];
         let token = canvas.tokens.controlled[0];
-        let targetToken = {};
+        let targetToken;
         if (game.user.targets.size > 0) {
             targetToken = game.user.targets.values().next().value.actor;
         } else {
@@ -116,22 +119,26 @@ export async function bless(actorData) {
                 // Remove penalty for sustaining the spell
                 let sus = actorData.getFlag("world", "sustained");
                 let filtered = sus.filter(e => e.name !== "bless");
-                actorData.setFlag("world", "activeSpells", filtered);
+                actorData.setFlag("world", "sustained", filtered);
 
                 // Remove bonus from target
                 let ff = target.getFlag("world", "forward");
-                let fFiltered = ff.fillAlpha(f => f.type !== "bless");
+                let fFiltered = ff.filter(f => f.type !== "bless");
                 target.setFlag("world", "forward", fFiltered);
 
                 // Cancel the animated effect
                 TokenMagic.deleteFilters(target);
+
+                util.coloredChat(actorData,
+                    target,
+                    {middleWords: "has canceled the Bless on"});
             }
         };
 
         clericSpell({
             actorData: actorData, spellName: "Bless", post: () => {
                 let token = canvas.tokens.controlled[0];
-                let targetToken = {};
+                let targetToken;
                 if (game.user.targets.size > 0) {
                     targetToken = game.user.targets.values().next().value.actor;
                 } else {
@@ -139,12 +146,16 @@ export async function bless(actorData) {
                 }
 
                 sh.setActiveSpell(actorData, "bless", blessFlag);
-                sh.setSustained(actorData, "bless", -1);
+                sh.setSustained(actorData, "bless", 1);
                 sh.setForward(targetToken, "bless", 1);
+
+                util.coloredChat(actorData,
+                    targetToken,
+                    {middleWords: "has Blessed"});
             },
             fail: () => {
                 let token = canvas.tokens.controlled[0];
-                let targetToken = {};
+                let targetToken;
                 if (game.user.targets.size > 0) {
                     targetToken = game.user.targets.values().next().value.actor;
                 } else {
@@ -216,10 +227,10 @@ export async function cureLightWounds(actorData) {
                                 });
                             else {
                                 // We can apply healing automatically, so just show a normal chat message.
-                                ChatMessage.create({
-                                    speaker: ChatMessage.getSpeaker(),
-                                    content: `${actorData.name} casts Cure Light Wounds on ${targetActor.data.name} for ${maxHeal} HP.<br>`
-                                });
+                                util.coloredChat(actorData,
+                                    targetActor,
+                                    {middleWords: "casts Cure Light Wounds on",
+                                    endWords: `for ${maxHeal} HP`});
                                 game.actors.find(a => a._id === targetActor._id).update({
                                     "data.attributes.hp.value": targetActor.data.data.attributes.hp.value + maxHeal
                                 });
@@ -239,7 +250,8 @@ export async function causeFear(actorData) {
         clericSpell({
             actorData: actorData, spellName: "Cause Fear", post: () => {
 
-            }});
+            }
+        });
     });
 }
 
@@ -250,7 +262,8 @@ export async function detectAlignment(actorData) {
         clericSpell({
             actorData: actorData, spellName: "Detect Alignment", post: () => {
 
-            }});
+            }
+        });
     });
 }
 
@@ -261,7 +274,8 @@ export async function magicWeapon(actorData) {
         clericSpell({
             actorData: actorData, spellName: "Magic Weapon", post: () => {
 
-            }});
+            }
+        });
     });
 }
 
@@ -272,7 +286,8 @@ export async function sanctuary(actorData) {
         clericSpell({
             actorData: actorData, spellName: "Sanctuary", post: () => {
 
-            }});
+            }
+        });
     });
 }
 
@@ -283,6 +298,7 @@ export async function speakWithDead(actorData) {
         clericSpell({
             actorData: actorData, spellName: "Speak With Dead", post: () => {
 
-            }});
+            }
+        });
     });
 }

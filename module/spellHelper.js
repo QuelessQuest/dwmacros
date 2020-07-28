@@ -40,6 +40,14 @@ export async function castSpell({
     let ongoing = actorData.getFlag("world", "ongoing");
     let abilityMod = actorData.data.data.abilities[ability].mod;
     let formula = `${baseFormula}+${abilityMod}`;
+    let sustained = actorData.getFlag("world", "sustained");
+    let sus = 0;
+    for (let idx = 0; idx < sustained.length; idx++) {
+        sus += sustained[idx].value;
+    }
+    if (sus) {
+        formula += `-${sus}`;
+    }
     if (ongoing) {
         formula += `+${ongoing}`;
     } else {
@@ -59,7 +67,7 @@ export async function castSpell({
         ability: ability.charAt(0).toUpperCase() + ability.slice(1),
         mod: abilityMod,
         ongoing: ongoing,
-        sustained: 0,
+        sustained: sus ? `-$sus` : 0,
         rollDw: await cRoll.render(),
         style: ""
     }
@@ -188,8 +196,9 @@ export async function dropSpell(actorData) {
 
     // Call spells cancel function for the target
     let tokens = canvas.tokens.objects.children;
-    let tt = tokens.find(c => c.id === as.target);
-    as.cancel(actorData, tt);
+    let targetToken = tokens.find(c => c.actor.id === as.target);
+    let targetActor = targetToken.actor;
+    as.cancel(actorData, targetActor);
 }
 
 /**

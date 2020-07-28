@@ -1,5 +1,4 @@
 import * as sh from './spellHelper.js'
-import {clericSpell} from "./clericSpells";
 
 /**
  * WizardSpell
@@ -43,7 +42,7 @@ export async function prestidigitation(actorData) {
     sh.validateSpell({actorData: actorData, spell: "Prestidigitation"}).then(v => {
         if (!v) return;
 
-        clericSpell({
+        wizardSpell({
             actorData: actorData, spellName: "Prestidigitation", post: () => {
 
             }});
@@ -54,7 +53,7 @@ export async function unseenServant(actorData) {
     sh.validateSpell({actorData: actorData, spell: "Unseen Servant"}).then(v => {
         if (!v) return;
 
-        clericSpell({
+        wizardSpell({
             actorData: actorData, spellName: "Unseen Servant", post: () => {
 
             }});
@@ -67,7 +66,7 @@ export async function alarm(actorData) {
     sh.validateSpell({actorData: actorData, spell: "Alarm"}).then(v => {
         if (!v) return;
 
-        clericSpell({
+        wizardSpell({
             actorData: actorData, spellName: "Alarm", post: () => {
 
             }});
@@ -78,7 +77,7 @@ export async function charmPerson(actorData) {
     sh.validateSpell({actorData: actorData, spell: "Charm Person"}).then(v => {
         if (!v) return;
 
-        clericSpell({
+        wizardSpell({
             actorData: actorData, spellName: "Charm Person", post: () => {
 
             }});
@@ -89,7 +88,7 @@ export async function contactSpirits(actorData) {
     sh.validateSpell({actorData: actorData, spell: "Contact Spirits"}).then(v => {
         if (!v) return;
 
-        clericSpell({
+        wizardSpell({
             actorData: actorData, spellName: "Contact Spirits", post: () => {
 
             }});
@@ -100,7 +99,7 @@ export async function detectMagic(actorData) {
     sh.validateSpell({actorData: actorData, spell: "Detect Magic"}).then(v => {
         if (!v) return;
 
-        clericSpell({
+        wizardSpell({
             actorData: actorData, spellName: "Detect Magic", post: () => {
 
             }});
@@ -111,7 +110,7 @@ export async function telepathy(actorData) {
     sh.validateSpell({actorData: actorData, spell: "Telepathy"}).then(v => {
         if (!v) return;
 
-        clericSpell({
+        wizardSpell({
             actorData: actorData, spellName: "Telepathy", post: () => {
 
             }});

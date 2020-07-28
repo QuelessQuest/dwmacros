@@ -14,6 +14,7 @@
     "module/wizardSpells.js",
     "module/commonSpells.js",
     "module/druidMoves.js",
+    "module/dwUtils.js",
     "module/objects/spell-casting-dialog.js"
   ],
   "styles": [

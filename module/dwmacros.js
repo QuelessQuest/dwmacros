@@ -3,6 +3,7 @@ import * as cs from './clericSpells.js'
 import * as ws from './wizardSpells.js'
 import * as cmn from './commonSpells.js'
 import * as dm from './druidMoves.js'
+import * as util from './dwUtils.js'
 
 export function DWMacros() {
 
@@ -104,6 +105,10 @@ export function DWMacros() {
         return sh.setSpells(actorData);
     }
 
+    async function gcolors(actorData) {
+        return util.getColors(actorData, game.user.targets.values().next().value.actor);
+    }
+
     /**
      * CLASS MOVES ========================================
      */
@@ -145,7 +150,8 @@ export function DWMacros() {
         castMagicMissile: castMagicMissile,
         prepareSpells: prepareSpells,
         showToken: showToken,
-        showActor: showActor
+        showActor: showActor,
+        gcolors: gcolors
     }
 }
 
