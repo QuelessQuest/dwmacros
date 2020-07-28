@@ -42,6 +42,30 @@ export async function clericSpell({actorData: actorData, spellName: spellName, t
     }
 }
 
+// ROTES =======================================================================================
+
+export async function guidance(actorData) {
+    sh.validateSpell({actorData: actorData, spell: "Guidance"}).then(v => {
+        if (!v) return;
+
+        clericSpell({
+            actorData: actorData, spellName: "Guidance", post: () => {
+
+            }});
+    });
+}
+
+export async function sanctify(actorData) {
+    sh.validateSpell({actorData: actorData, spell: "Sanctify"}).then(v => {
+        if (!v) return;
+
+        clericSpell({
+            actorData: actorData, spellName: "Sanctify", post: () => {
+
+            }});
+    });
+}
+
 // FIRST LEVEL =======================================================================================
 
 /**
@@ -205,5 +229,60 @@ export async function cureLightWounds(actorData) {
                 })
             }
         });
+    });
+}
+
+export async function causeFear(actorData) {
+    sh.validateSpell({actorData: actorData, spell: "Cause Fear"}).then(v => {
+        if (!v) return;
+
+        clericSpell({
+            actorData: actorData, spellName: "Cause Fear", post: () => {
+
+            }});
+    });
+}
+
+export async function detectAlignment(actorData) {
+    sh.validateSpell({actorData: actorData, spell: "Detect Alignment"}).then(v => {
+        if (!v) return;
+
+        clericSpell({
+            actorData: actorData, spellName: "Detect Alignment", post: () => {
+
+            }});
+    });
+}
+
+export async function magicWeapon(actorData) {
+    sh.validateSpell({actorData: actorData, spell: "Magic Weapon"}).then(v => {
+        if (!v) return;
+
+        clericSpell({
+            actorData: actorData, spellName: "Magic Weapon", post: () => {
+
+            }});
+    });
+}
+
+export async function sanctuary(actorData) {
+    sh.validateSpell({actorData: actorData, spell: "Sanctuary"}).then(v => {
+        if (!v) return;
+
+        clericSpell({
+            actorData: actorData, spellName: "Sanctuary", post: () => {
+
+            }});
+    });
+}
+
+export async function speakWithDead(actorData) {
+    sh.validateSpell({actorData: actorData, spell: "Speak With Dead"}).then(v => {
+        if (!v) return;
+
+        clericSpell({
+            actorData: actorData, spellName: "Speak With Dead", post: () => {
+
+            }});
     });
 }
