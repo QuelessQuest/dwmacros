@@ -59,3 +59,19 @@ export function coloredChat({
         });
     });
 }
+
+export function getTargets(actorData) {
+    let targetActor;
+    let targetToken;
+    if (game.user.targets.size > 0) {
+        targetActor = game.user.targets.values().next().value.actor;
+        targetToken = canvas.tokens.placeables.filter(placeable => placeable.isTargeted)[0];
+    } else {
+        targetActor = actorData;
+        targetToken = canvas.tokens.controlled[0];
+    }
+    return {
+        targetActor: targetActor,
+        targetToken: targetToken
+    }
+}

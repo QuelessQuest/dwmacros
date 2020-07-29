@@ -12,46 +12,44 @@ export async function light(actorData, spellType) {
     sh.validateSpell({actorData: actorData, spell: "Light"}).then(v => {
         if (!v) return;
 
-        let lightFlag = {
-            spell: "light",
-            target: null,
-            cancel: function (thing) {
-                thing.update({"dimLight": 0, "brightLight": 0});
-                thing.refresh();
-            }
-        };
-
         spellType({
-            actorData: actorData, spellName: "Light", post: () => {
-                let token = canvas.tokens.controlled[0];
-                lightFlag.target = token.uuid;
-                let d = new Dialog({
-                    title: 'Light',
-                    content:
-                        "<input type='text' name='alwaysOn' is='colorpicker-input' id='permanent'>",
-                    buttons: {
-                        ok: {
-                            icon: '<i class="fas fa-sun"></i>',
-                            label: "Cast",
-                            callback: () => {
-                                util.coloredChat({
-                                    actorData: actorData,
-                                    middleWords: "casts Light"
-                                });
-                                token.update({"dimLight": 40, "brightLight": 20, "lightAngle": 360, "lightColor": document.getElementById("permanent").value.substring(0, 7)});
-                                sh.setActiveSpell(actorData, 'light', lightFlag);
-                            }
-                        },
-                        cancel: {
-                            icon: '<i class="fas fa-times"></i>',
-                            label: "Cancel",
-                            callback: () => {
-                            }
+            actorData: actorData, spellName: "Light"
+        }).then(r => {
+            if (!r) return;
+
+            let lightFlag = {
+                spell: "light",
+                endSpell: function (actorData) {
+                    let targetData = util.getTargets(actorData);
+                    targetData.targetToken.update({"dimLight": 0, "brightLight": 0});
+                }
+            };
+            new Dialog({
+                title: 'Light',
+                content:
+                    "<input type='text' name='alwaysOn' is='colorpicker-input' id='permanent'>",
+                buttons: {
+                    ok: {
+                        icon: '<i class="fas fa-sun"></i>',
+                        label: "Cast",
+                        callback: () => {
+                            util.coloredChat({
+                                actorData: actorData,
+                                middleWords: "casts Light"
+                            });
+                            let targetData = util.getTargets(actorData);
+                            targetData.targetToken.update({"dimLight": 40, "brightLight": 20, "lightAngle": 360, "lightColor": document.getElementById("permanent").value.substring(0, 7)});
+                            sh.setActiveSpell(actorData, lightFlag);
+                        }
+                    },
+                    cancel: {
+                        icon: '<i class="fas fa-times"></i>',
+                        label: "Cancel",
+                        callback: () => {
                         }
                     }
-                });
-                d.render(true);
-            }
+                }
+            }).render(true);
         });
     });
 }

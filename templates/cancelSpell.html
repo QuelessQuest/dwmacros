@@ -5,7 +5,7 @@
     <div class="dwmacros bottom-margin">
         <select name="activeSpells" id="activeSpells">
             {{#each activeSpells}}
-            <option value="{{this.spell}}">{{this.spell}}</option>
+            <option value="{{this.spell}},{{this.targetName}}">{{this.spell}} [{{this.targetName}}]</option>
             {{/each}}
         </select>
     </div>

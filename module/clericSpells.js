@@ -10,7 +10,7 @@ import * as util from './dwUtils.js'
  * @param post
  * @returns {Promise<*>}
  */
-export async function clericSpell({actorData: actorData, spellName: spellName, target: target = false, post: post, fail: fail}) {
+export async function clericSpell({actorData: actorData, spellName: spellName, target: target = false}) {
     if (actorData) {
         if (target) {
             if (game.user.targets.size === 0) {
@@ -37,7 +37,7 @@ export async function clericSpell({actorData: actorData, spellName: spellName, t
             }
         ];
 
-        return sh.castSpell(({actorData: actorData, dialogFlavor: flavor, options: options, title: spellName, post: post, fail: fail}));
+        return sh.castSpell(({actorData: actorData, dialogFlavor: flavor, options: options, title: spellName}));
     } else {
         ui.notifications.warn("Please select a token.");
     }
@@ -50,9 +50,7 @@ export async function guidance(actorData) {
         if (!v) return;
 
         clericSpell({
-            actorData: actorData, spellName: "Guidance", post: () => {
-
-            }
+            actorData: actorData, spellName: "Guidance"
         });
     });
 }
@@ -62,9 +60,7 @@ export async function sanctify(actorData) {
         if (!v) return;
 
         clericSpell({
-            actorData: actorData, spellName: "Sanctify", post: () => {
-
-            }
+            actorData: actorData, spellName: "Sanctify"
         });
     });
 }
@@ -80,81 +76,77 @@ export async function bless(actorData) {
     sh.validateSpell({actorData: actorData, spell: "Bless"}).then(v => {
         if (!v) return;
 
-        let bGlow = [
-            {
-                filterType: "zapshadow",
-                alphaTolerance: 0.60
-            },
-            {
-                filterType: "outline",
-                padding: 10,
-                color: 0xACC1C6,
-                thickness: 1,
-                quality: 10,
-                animated:
-                    {
-                        thickness:
-                            {
-                                active: true,
-                                loopDuration: 10000,
-                                animType: "syncCosOscillation",
-                                val1: 2,
-                                val2: 6
-                            }
-                    }
-            }];
-        let targetActor;
-        let targetToken;
-        if (game.user.targets.size > 0) {
-            targetActor = game.user.targets.values().next().value.actor;
-            targetToken = canvas.tokens.placeables.filter(placeable => placeable.isTargeted)[0];
-        } else {
-            targetActor = actorData;
-            targetToken = canvas.tokens.controlled[0];
-        }
-
-        TokenMagic.addFilters(targetToken, bGlow);
-
-        let blessFlag = {
-            spell: "bless",
-            cancel: async function (actorData) {
-                // Remove penalty for sustaining the spell
-                let sus = actorData.getFlag("world", "sustained");
-                let filtered = sus.filter(e => e.name !== "bless");
-                actorData.setFlag("world", "sustained", filtered);
-
-                // Remove bonus from target
-                let ff = targetActor.getFlag("world", "forward");
-                let fFiltered = ff.filter(f => f.type !== "bless");
-                targetActor.setFlag("world", "forward", fFiltered);
-
-                // Cancel the animated effect
-                TokenMagic.deleteFilters(targetToken);
-
-                util.coloredChat({
-                    actorData: actorData,
-                    target: targetActor,
-                    middleWords: "has canceled the Bless on"
-                });
-            }
-        };
-
         clericSpell({
-            actorData: actorData, spellName: "Bless", post: () => {
-                sh.setActiveSpell(actorData, "bless", blessFlag);
-                sh.setSustained(actorData, "bless", 1);
-                sh.setForward(targetActor, "bless", 1);
-
-                util.coloredChat({
-                    actorData: actorData,
-                    target: targetActor,
-                    middleWords: "has Blessed"
-                });
-            },
-            fail: () => {
-                TokenMagic.deleteFilters(targetToken);
+            actorData: actorData, spellName: "Bless"
+        }).then(r => {
+            let targetData = util.getTargets(actorData);
+            if (!r) {
+                TokenMagic.deleteFilters(targetData.targetToken);
+                return;
             }
-        });
+
+            let bGlow = [
+                {
+                    filterType: "zapshadow",
+                    alphaTolerance: 0.60
+                },
+                {
+                    filterType: "outline",
+                    padding: 10,
+                    color: 0xACC1C6,
+                    thickness: 1,
+                    quality: 10,
+                    animated:
+                        {
+                            thickness:
+                                {
+                                    active: true,
+                                    loopDuration: 10000,
+                                    animType: "syncCosOscillation",
+                                    val1: 2,
+                                    val2: 6
+                                }
+                        }
+                }];
+
+            TokenMagic.addFilters(targetData.targetToken, bGlow);
+
+            let blessFlag = {
+                spell: "bless",
+                targetName: targetData.targetActor.name,
+                endSpell: function (actorData) {
+                    let targetData = util.getTargets(actorData);
+                    // Remove penalty for sustaining the spell
+                    let sus = actorData.getFlag("world", "sustained");
+                    let filtered = sus.filter(e => e.name !== "bless");
+                    actorData.setFlag("world", "sustained", filtered);
+
+                    // Remove bonus from target
+                    let ff = targetData.targetActor.getFlag("world", "forward");
+                    let fFiltered = ff.filter(f => f.type !== "bless");
+                    targetData.targetActor.setFlag("world", "forward", fFiltered);
+
+                    // Cancel the animated effect
+                    TokenMagic.deleteFilters(targetData.targetToken);
+
+                    util.coloredChat({
+                        actorData: actorData,
+                        target: targetData.targetActor,
+                        middleWords: "has canceled the Bless on"
+                    });
+                }
+            };
+
+            sh.setActiveSpell(actorData, blessFlag);
+            sh.setSustained(actorData, "bless", 1);
+            sh.setForward(targetData.targetActor, "bless", 1);
+
+            util.coloredChat({
+                actorData: actorData,
+                target: targetData.targetActor,
+                middleWords: "has Blessed"
+            });
+        })
     });
 }
 
@@ -169,70 +161,72 @@ export async function cureLightWounds(actorData) {
         if (!v) return;
 
         clericSpell({
-            actorData: actorData, spellName: "Cure Light Wounds", target: true, post: () => {
-                let template = "modules/dwmacros/templates/chat/spell-dialog.html";
-                let glow =
-                    [{
-                        filterType: "outline",
-                        autoDestroy: true,
-                        padding: 10,
-                        color: 0xFFFFFF,
-                        thickness: 1,
-                        quality: 10,
-                        animated:
-                            {
-                                thickness:
-                                    {
-                                        active: true,
-                                        loopDuration: 4000,
-                                        loops: 1,
-                                        animType: "syncCosOscillation",
-                                        val1: 1,
-                                        val2: 8
-                                    }
-                            }
-                    }];
+            actorData: actorData, spellName: "Cure Light Wounds", target: true
+        }).then(r => {
+            if (!r) return;
 
-                let roll = new Roll("1d8", {});
-                roll.roll();
-                TokenMagic.addFiltersOnTargeted(glow);
-                roll.render().then(r => {
-                    let templateData = {
-                        title: "title",
-                        flavor: "flavor",
-                        rollDw: r,
-                        style: ""
-                    }
-                    renderTemplate(template, templateData).then(content => {
-                        game.dice3d.showForRoll(roll).then(displayed => {
-                            let targetActor = game.user.targets.values().next().value.actor;
-                            let maxHeal = Math.clamped(roll.result, 0,
-                                targetActor.data.data.attributes.hp.max - targetActor.data.data.attributes.hp.value);
+            let template = "modules/dwmacros/templates/chat/spell-dialog.html";
+            let glow =
+                [{
+                    filterType: "outline",
+                    autoDestroy: true,
+                    padding: 10,
+                    color: 0xFFFFFF,
+                    thickness: 1,
+                    quality: 10,
+                    animated:
+                        {
+                            thickness:
+                                {
+                                    active: true,
+                                    loopDuration: 4000,
+                                    loops: 1,
+                                    animType: "syncCosOscillation",
+                                    val1: 1,
+                                    val2: 8
+                                }
+                        }
+                }];
 
-                            if (targetActor.permission !== CONST.ENTITY_PERMISSIONS.OWNER)
-                                // We need help applying the healing, so make a roll message for right-click convenience.
-                                roll.toMessage({
-                                    speaker: ChatMessage.getSpeaker(),
-                                    flavor: `${actorData.name} casts Cure Light Wounds on ${targetActor.data.name}.<br>
+            let roll = new Roll("1d8", {});
+            roll.roll();
+            TokenMagic.addFiltersOnTargeted(glow);
+            roll.render().then(r => {
+                let templateData = {
+                    title: "title",
+                    flavor: "flavor",
+                    rollDw: r,
+                    style: ""
+                }
+                renderTemplate(template, templateData).then(content => {
+                    game.dice3d.showForRoll(roll).then(displayed => {
+                        let targetActor = game.user.targets.values().next().value.actor;
+                        let maxHeal = Math.clamped(roll.result, 0,
+                            targetActor.data.data.attributes.hp.max - targetActor.data.data.attributes.hp.value);
+
+                        if (targetActor.permission !== CONST.ENTITY_PERMISSIONS.OWNER)
+                            // We need help applying the healing, so make a roll message for right-click convenience.
+                            roll.toMessage({
+                                speaker: ChatMessage.getSpeaker(),
+                                flavor: `${actorData.name} casts Cure Light Wounds on ${targetActor.data.name}.<br>
                             <p><em>Manually apply ${maxHeal} HP of healing to ${targetActor.data.name}</em></p>`
-                                });
-                            else {
-                                // We can apply healing automatically, so just show a normal chat message.
-                                util.coloredChat({
-                                    actorData: actorData,
-                                    target: targetActor,
-                                    middleWords: "casts Cure Light Wounds on",
-                                    endWords: `for ${maxHeal} HP`
-                                });
-                                game.actors.find(a => a._id === targetActor._id).update({
-                                    "data.attributes.hp.value": targetActor.data.data.attributes.hp.value + maxHeal
-                                });
-                            }
-                        });
+                            });
+                        else {
+                            // We can apply healing automatically, so just show a normal chat message.
+                            util.coloredChat({
+                                actorData: actorData,
+                                target: targetActor,
+                                middleWords: "casts Cure Light Wounds on",
+                                endWords: `for ${maxHeal} HP`
+                            });
+                            game.actors.find(a => a._id === targetActor._id).update({
+                                "data.attributes.hp.value": targetActor.data.data.attributes.hp.value + maxHeal
+                            });
+                        }
                     });
-                })
-            }
-        });
+                });
+            })
+        })
     });
 }
 
@@ -241,9 +235,7 @@ export async function causeFear(actorData) {
         if (!v) return;
 
         clericSpell({
-            actorData: actorData, spellName: "Cause Fear", post: () => {
-
-            }
+            actorData: actorData, spellName: "Cause Fear"
         });
     });
 }
@@ -253,9 +245,7 @@ export async function detectAlignment(actorData) {
         if (!v) return;
 
         clericSpell({
-            actorData: actorData, spellName: "Detect Alignment", post: () => {
-
-            }
+            actorData: actorData, spellName: "Detect Alignment"
         });
     });
 }
@@ -265,9 +255,7 @@ export async function magicWeapon(actorData) {
         if (!v) return;
 
         clericSpell({
-            actorData: actorData, spellName: "Magic Weapon", post: () => {
-
-            }
+            actorData: actorData, spellName: "Magic Weapon"
         });
     });
 }
@@ -277,9 +265,7 @@ export async function sanctuary(actorData) {
         if (!v) return;
 
         clericSpell({
-            actorData: actorData, spellName: "Sanctuary", post: () => {
-
-            }
+            actorData: actorData, spellName: "Sanctuary"
         });
     });
 }
@@ -289,9 +275,7 @@ export async function speakWithDead(actorData) {
         if (!v) return;
 
         clericSpell({
-            actorData: actorData, spellName: "Speak With Dead", post: () => {
-
-            }
+            actorData: actorData, spellName: "Speak With Dead"
         });
     });
 }

@@ -13,8 +13,6 @@ import * as util from './dwUtils.js'
  * @param speaker
  * @param options
  * @param dialogOptions
- * @param post
- * @param fail
  * @returns {Promise<void>}
  */
 export async function castSpell({
@@ -26,12 +24,8 @@ export async function castSpell({
                                     details = {},
                                     speaker = null,
                                     options = [],
-                                    dialogOptions = {},
-                                    post = () => {
-                                    },
-                                    fail = () => {
-                                    }
-                                } = {}) {
+                                    dialogOptions = {}
+                                }) {
 
     let baseFormula = '2d6';
     let castingData = actorData.items.find(i => i.name.toLowerCase() === "Cast A Spell".toLowerCase());
@@ -78,29 +72,30 @@ export async function castSpell({
         speaker: speaker,
     }
 
-    game.dice3d.showForRoll(cRoll).then(displayed => {
+    return game.dice3d.showForRoll(cRoll).then(displayed => {
         if (cRoll.total >= 10) {
             templateData.details = "Successful Casting";
             templateData.style = "background: rgba(0, 255, 0, 0.1)";
-            renderTemplate(template, templateData).then(content => {
+            return renderTemplate(template, templateData).then(content => {
                 chatData.content = content;
                 ChatMessage.create(chatData);
-                post();
+                return true;
             });
+
         } else if (cRoll.total <= 6) {
             templateData.details = "Failed Casting";
             templateData.style = "background: rgba(255, 0, 0, 0.1)";
-            renderTemplate(template, templateData).then(content => {
+            return renderTemplate(template, templateData).then(content => {
                 chatData.content = content;
                 ChatMessage.create(chatData);
-                fail();
+                return false;
             });
         } else {
             let opt1 = options.shift();
             let opt2 = options.shift();
             let opt3 = options.shift();
             templateData.style = "background: rgba(255, 255, 0, 0.1)";
-            let z = new Promise(resolve => {
+            return new Promise(resolve => {
                 new SpellCastingDialog({
                     title: title,
                     content: dialogFlavor,
@@ -113,7 +108,6 @@ export async function castSpell({
                                 renderTemplate(template, templateData).then(content => {
                                     chatData.content = content;
                                     ChatMessage.create(chatData);
-                                    post();
                                 });
                             }
                         },
@@ -125,7 +119,6 @@ export async function castSpell({
                                 renderTemplate(template, templateData).then(content => {
                                     chatData.content = content;
                                     ChatMessage.create(chatData);
-                                    post();
                                 });
                                 setOngoing(actorData, -1);
                             }
@@ -138,7 +131,6 @@ export async function castSpell({
                                 renderTemplate(template, templateData).then(content => {
                                     chatData.content = content;
                                     ChatMessage.create(chatData);
-                                    post();
                                 });
                                 let spell = actorData.data.items.find(i => i.name.toLowerCase() === title.toLowerCase());
                                 let sId = spell._id;
@@ -153,6 +145,9 @@ export async function castSpell({
                     },
                     close: resolve
                 }, dialogOptions).render(true);
+
+            }).then(() => {
+                return true;
             });
         }
     });
@@ -192,11 +187,28 @@ export async function dropSpell(actorData) {
         }).render(true);
     });
 
+    // spell = spellName,targetName
     // Remove from active list
-    let theSpell = activeSpells.find(x => x.spell === spell);
-    await theSpell.cancel(actorData);
-
-    let filtered = activeSpells.filter(e => e.spell !== spell);
+    let info = spell.split(',');
+    let filtered = [];
+    let theSpell = null;
+    activeSpells.forEach(spell => {
+        if (spell.spell === info[0]) {
+            if (spell.targetName === info[1]) {
+                theSpell = spell;
+            } else {
+                filtered.push(spell);
+            }
+        } else {
+            filtered.push(spell);
+        }
+    });
+    console.log(activeSpells);
+    console.log(theSpell);
+    if (theSpell)
+        theSpell.endSpell(actorData);
+    console.log("FILTERED");
+    console.log(filtered);
     await actorData.setFlag("world", "activeSpells", filtered);
 }
 
@@ -251,20 +263,21 @@ export async function setOngoing(actorData, value) {
  * SET ACTIVE SPELL
  * Adds the spell to the list of currently active spells. This list is used when a spell is to be canceled.
  * @param actorData
- * @param spell
  * @param data
  * @returns {Promise<void>}
  */
-export async function setActiveSpell(actorData, spell, data) {
-    let as = actorData.getFlag("world", "activeSpells");
-    if (as) {
-        if (!as.find(x => x.spell === spell)) {
-            as.push(data);
-        }
+export async function setActiveSpell(actorData, data) {
+    console.log("DATA");
+    console.log(data);
+    let flag = actorData.getFlag("world", "activeSpells");
+    if (flag) {
+        flag.push(data);
     } else {
-        as = [data];
+        flag = [data];
     }
-    actorData.setFlag("world", "activeSpells", as);
+    console.log("setFlag");
+    console.log(flag);
+    await actorData.setFlag("world", "activeSpells", flag);
 }
 
 /**
