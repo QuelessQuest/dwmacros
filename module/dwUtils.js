@@ -11,29 +11,42 @@ export function getColors(actorData, target) {
         target: "#000000"
     }
 
-    let sourceUser = game.users.find(u => u.data.character === actorData._id);
-    if (sourceUser) {
-        gcolors.source = sourceUser.data.color;
+    if (actorData) {
+        let sourceUser = game.users.find(u => u.data.character === actorData._id);
+        if (sourceUser) {
+            gcolors.source = sourceUser.data.color;
+        }
     }
 
-    let targetUser = game.users.find(u => u.data.character === target._id);
-    if (targetUser) {
-        gcolors.target = targetUser.data.color;
+    if (target) {
+        let targetUser = game.users.find(u => u.data.character === target._id);
+        if (targetUser) {
+            gcolors.target = targetUser.data.color;
+        }
     }
 
     return gcolors;
 }
 
-export function coloredChat(actorData, target, { startingWords= "", middleWords= "", endWords= ""}) {
+export function coloredChat({
+                                actorData = null,
+                                target = null,
+                                startingWords = "",
+                                middleWords = "",
+                                endWords = ""
+                            }) {
     let template = "modules/dwmacros/templates/chat/defaultWithColor.html";
 
     let gcolors = getColors(actorData, target);
 
+    let sName = actorData ? actorData.name : "";
+    let tName = target ? target.name : "";
+
     let templateData = {
         sourceColor: gcolors.source,
-        sourceName: actorData.name,
+        sourceName: sName,
         targetColor: gcolors.target,
-        targetName: target.name,
+        targetName: tName,
         startingWords: startingWords,
         middleWords: middleWords,
         endWords: endWords

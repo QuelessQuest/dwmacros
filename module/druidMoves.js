@@ -1,3 +1,5 @@
+import * as util from './dwUtils.js'
+
 /**
  * Provides a dialog to chose a new shape. Token image will be updated to reflect the selection.
  * @returns {Promise<void>}
@@ -79,9 +81,9 @@ export async function shapeshift(actorData) {
             "<option value='_Lizard.png'>Lizard</option>" +
             "<option value='_Lynx.png'>Lynx</option>" +
             "<option value='_Monkey.png'>Monkey</option>" +
-            "<option value='_Octopus.png'>Ocotpus</option>" +
+            "<option value='_Octopus.png'>Octopus</option>" +
             "<option value='_Owl.png'>Owl</option>" +
-            "<option value='_Panther.png'>Pantheer</option>" +
+            "<option value='_Panther.png'>Panther</option>" +
             "<option value='_Rat.png'>Rat</option>" +
             "<option value='_Raven.png'>Raven</option>" +
             "<option value='_Shark.png'>Shark</option>" +

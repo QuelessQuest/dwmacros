@@ -1,4 +1,5 @@
 import * as sh from './spellHelper.js'
+import * as util from './dwUtils.js'
 
 /**
  * WizardSpell
@@ -161,45 +162,32 @@ export async function invisibility(actorData) {
                 }
             ];
 
-        let token = canvas.tokens.controlled[0];
-        let targetToken = {};
+        let targetToken;
         if (game.user.targets.size > 0) {
-            targetToken = game.user.targets.values().next().value.actor;
+            targetToken = canvas.tokens.placeables.filter(placeable => placeable.isTargeted)[0];
         } else {
-            targetToken = token;
+            targetToken = canvas.tokens.controlled[0];
         }
         TokenMagic.addFilters(targetToken, params);
 
         let invFlag = {
             spell: "invisibility",
-            target: targetToken.id,
-            cancel: function (target) {
-                target.update({"hidden": false});
+            data:  {
+                tokenId: targetToken.id
+            },
+            cancel: function (actorData, flagData) {
+                let targetToken = canvas.tokens.placeables.find(p=>p.id === flagData.tokenId);
+                targetToken.update({"hidden": false});
             }
         };
 
         wizardSpell({
             actorData: actorData, spellName: "Invisibility", post: () => {
-                let token = canvas.tokens.controlled[0];
-                let targetActor = {};
-                if (game.user.targets.size > 0) {
-                    targetActor = game.user.targets.values().next().value.actor;
-                } else {
-                    targetActor = token;
-                }
-
-                targetActor.update({"hidden": true});
+                targetToken.update({"hidden": true});
                 sh.setActiveSpell(actorData, 'invisibility', invFlag);
-                TokenMagic.deleteFilters(targetActor);
+                TokenMagic.deleteFilters(targetToken);
             },
             fail: () => {
-                let token = canvas.tokens.controlled[0];
-                let targetToken = {};
-                if (game.user.targets.size > 0) {
-                    targetToken = game.user.targets.values().next().value.actor;
-                } else {
-                    targetToken = token;
-                }
                 TokenMagic.deleteFilters(targetToken);
             }
         });
@@ -262,9 +250,11 @@ export async function magicMissile(actorData) {
                                     });
                                 else {
                                     // We can apply damage automatically, so just show a normal chat message.
-                                    ChatMessage.create({
-                                        speaker: ChatMessage.getSpeaker(),
-                                        content: `${actorData.name} casts Magic Missle on ${targetActor.data.name} for ${roll.total} HP.<br>`
+                                    util.coloredChat({
+                                        actorData: actorData,
+                                        middleWords: "casts Magic Missile on",
+                                        target: targetActor,
+                                        endWords: `for ${roll.total} HP`
                                     });
                                     game.actors.find(a => a._id === targetActor._id).update({
                                         "data.attributes.hp.value": targetActor.data.data.attributes.hp.value - roll.total

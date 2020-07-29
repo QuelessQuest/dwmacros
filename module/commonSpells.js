@@ -1,4 +1,5 @@
 import * as sh from './spellHelper.js'
+import * as util from './dwUtils.js'
 
 /**
  * LIGHT
@@ -33,9 +34,9 @@ export async function light(actorData, spellType) {
                             icon: '<i class="fas fa-sun"></i>',
                             label: "Cast",
                             callback: () => {
-                                ChatMessage.create({
-                                    speaker: ChatMessage.getSpeaker(),
-                                    content: `${actorData.name} casts Light.<br>`
+                                util.coloredChat({
+                                    actorData: actorData,
+                                    middleWords: "casts Light"
                                 });
                                 token.update({"dimLight": 40, "brightLight": 20, "lightAngle": 360, "lightColor": document.getElementById("permanent").value.substring(0, 7)});
                                 sh.setActiveSpell(actorData, 'light', lightFlag);

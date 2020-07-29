@@ -103,64 +103,55 @@ export async function bless(actorData) {
                             }
                     }
             }];
-        let token = canvas.tokens.controlled[0];
+        let targetActor;
         let targetToken;
         if (game.user.targets.size > 0) {
-            targetToken = game.user.targets.values().next().value.actor;
+            targetActor = game.user.targets.values().next().value.actor;
+            targetToken = canvas.tokens.placeables.filter(placeable => placeable.isTargeted)[0];
         } else {
-            targetToken = token;
+            targetActor = actorData;
+            targetToken = canvas.tokens.controlled[0];
         }
+
         TokenMagic.addFilters(targetToken, bGlow);
 
         let blessFlag = {
             spell: "bless",
-            target: targetToken.id,
-            cancel: function (actorData, target) {
+            cancel: async function (actorData) {
                 // Remove penalty for sustaining the spell
                 let sus = actorData.getFlag("world", "sustained");
                 let filtered = sus.filter(e => e.name !== "bless");
                 actorData.setFlag("world", "sustained", filtered);
 
                 // Remove bonus from target
-                let ff = target.getFlag("world", "forward");
+                let ff = targetActor.getFlag("world", "forward");
                 let fFiltered = ff.filter(f => f.type !== "bless");
-                target.setFlag("world", "forward", fFiltered);
+                targetActor.setFlag("world", "forward", fFiltered);
 
                 // Cancel the animated effect
-                TokenMagic.deleteFilters(target);
+                TokenMagic.deleteFilters(targetToken);
 
-                util.coloredChat(actorData,
-                    target,
-                    {middleWords: "has canceled the Bless on"});
+                util.coloredChat({
+                    actorData: actorData,
+                    target: targetActor,
+                    middleWords: "has canceled the Bless on"
+                });
             }
         };
 
         clericSpell({
             actorData: actorData, spellName: "Bless", post: () => {
-                let token = canvas.tokens.controlled[0];
-                let targetToken;
-                if (game.user.targets.size > 0) {
-                    targetToken = game.user.targets.values().next().value.actor;
-                } else {
-                    targetToken = token;
-                }
-
                 sh.setActiveSpell(actorData, "bless", blessFlag);
                 sh.setSustained(actorData, "bless", 1);
-                sh.setForward(targetToken, "bless", 1);
+                sh.setForward(targetActor, "bless", 1);
 
-                util.coloredChat(actorData,
-                    targetToken,
-                    {middleWords: "has Blessed"});
+                util.coloredChat({
+                    actorData: actorData,
+                    target: targetActor,
+                    middleWords: "has Blessed"
+                });
             },
             fail: () => {
-                let token = canvas.tokens.controlled[0];
-                let targetToken;
-                if (game.user.targets.size > 0) {
-                    targetToken = game.user.targets.values().next().value.actor;
-                } else {
-                    targetToken = token;
-                }
                 TokenMagic.deleteFilters(targetToken);
             }
         });
@@ -227,10 +218,12 @@ export async function cureLightWounds(actorData) {
                                 });
                             else {
                                 // We can apply healing automatically, so just show a normal chat message.
-                                util.coloredChat(actorData,
-                                    targetActor,
-                                    {middleWords: "casts Cure Light Wounds on",
-                                    endWords: `for ${maxHeal} HP`});
+                                util.coloredChat({
+                                    actorData: actorData,
+                                    target: targetActor,
+                                    middleWords: "casts Cure Light Wounds on",
+                                    endWords: `for ${maxHeal} HP`
+                                });
                                 game.actors.find(a => a._id === targetActor._id).update({
                                     "data.attributes.hp.value": targetActor.data.data.attributes.hp.value + maxHeal
                                 });

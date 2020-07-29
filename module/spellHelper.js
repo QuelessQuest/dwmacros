@@ -1,4 +1,5 @@
 import SpellCastingDialog from "./objects/spell-casting-dialog.js";
+import * as util from './dwUtils.js'
 
 /**
  * Cast Spell
@@ -42,8 +43,10 @@ export async function castSpell({
     let formula = `${baseFormula}+${abilityMod}`;
     let sustained = actorData.getFlag("world", "sustained");
     let sus = 0;
-    for (let idx = 0; idx < sustained.length; idx++) {
-        sus += sustained[idx].value;
+    if (sustained) {
+        for (let idx = 0; idx < sustained.length; idx++) {
+            sus += sustained[idx].value;
+        }
     }
     if (sus) {
         formula += `-${sus}`;
@@ -67,7 +70,7 @@ export async function castSpell({
         ability: ability.charAt(0).toUpperCase() + ability.slice(1),
         mod: abilityMod,
         ongoing: ongoing,
-        sustained: sus ? `-$sus` : 0,
+        sustained: sus ? `-${sus}` : 0,
         rollDw: await cRoll.render(),
         style: ""
     }
@@ -190,15 +193,11 @@ export async function dropSpell(actorData) {
     });
 
     // Remove from active list
-    let as = activeSpells.find(x => x.spell === spell);
+    let theSpell = activeSpells.find(x => x.spell === spell);
+    await theSpell.cancel(actorData);
+
     let filtered = activeSpells.filter(e => e.spell !== spell);
     await actorData.setFlag("world", "activeSpells", filtered);
-
-    // Call spells cancel function for the target
-    let tokens = canvas.tokens.objects.children;
-    let targetToken = tokens.find(c => c.actor.id === as.target);
-    let targetActor = targetToken.actor;
-    as.cancel(actorData, targetActor);
 }
 
 /**
@@ -221,7 +220,7 @@ export async function setSustained(actorData, spell, value) {
             sus.push(susFlagItem);
         } else {
             susFlagItem.value += f.value;
-            let newSus = sus.filter(x=> x.spell !== spell);
+            let newSus = sus.filter(x => x.spell !== spell);
             newSus.push(susFlagItem);
             sus = newSus;
         }
@@ -283,7 +282,7 @@ export async function setForward(target, type, value) {
         value: value
     };
     if (flag) {
-       flag.push(flagData)
+        flag.push(flagData)
     } else {
         flag = [flagData];
     }
@@ -423,9 +422,9 @@ export async function setSpells(actorData) {
             }
         });
         actorData.setFlag("world", "ongoing", null);
-        ChatMessage.create({
-            speaker: ChatMessage.getSpeaker(),
-            content: `${actorData.name} has finished preparing spells.<br>`
+        util.coloredChat({
+            actorData: actorData,
+            middleWords: "has finished preparing spells",
         });
     }
 }
