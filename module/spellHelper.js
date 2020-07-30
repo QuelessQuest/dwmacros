@@ -187,59 +187,61 @@ export async function dropSpell(actorData) {
         }).render(true);
     });
 
+
     // spell = spellName,targetName
     // Remove from active list
     let info = spell.split(',');
-    let filtered = [];
-    let theSpell = null;
-    activeSpells.forEach(spell => {
-        if (spell.spell === info[0]) {
-            if (spell.targetName === info[1]) {
-                theSpell = spell;
-            } else {
-                filtered.push(spell);
-            }
-        } else {
-            filtered.push(spell);
-        }
-    });
-    console.log(activeSpells);
-    console.log(theSpell);
-    if (theSpell)
-        theSpell.endSpell(actorData);
-    console.log("FILTERED");
-    console.log(filtered);
-    await actorData.setFlag("world", "activeSpells", filtered);
+    await removeActiveSpell(actorData, {spell: info[0], targetName: info[1]});
 }
 
 /**
  * SET SUSTAINED
  * Sets a penalty that will be applied to all other casting rolls made by this actor
  * @param actorData
- * @param spell
- * @param value
+ * @param data
  * @returns {Promise<void>}
  */
-export async function setSustained(actorData, spell, value) {
-    let sus = actorData.getFlag("world", "sustained");
-    let susFlagItem = {
-        name: spell,
-        value: value
-    };
-    if (sus) {
-        let f = sus.find(x => x.spell === spell);
-        if (!f) {
-            sus.push(susFlagItem);
+export async function setSustained(actorData, data) {
+    await setSpellFlag(actorData, "sustained", data)
+}
+
+/**
+ * REMOVE SPELL FLAG
+ * @param actorData
+ * @param flag
+ * @param spell
+ * @param targetName
+ * @returns {Promise<null>}
+ */
+async function removeSpellFlag(actorData, flag, {spell = "", targetName = ""}) {
+    let flagItem = actorData.getFlag("world", flag);
+    let filtered = [];
+    let theItem = null;
+
+    flagItem.forEach(item => {
+        if (item.spell === spell) {
+            if (item.targetName === targetName) {
+                theItem = item;
+            } else {
+                filtered.push(item);
+            }
         } else {
-            susFlagItem.value += f.value;
-            let newSus = sus.filter(x => x.spell !== spell);
-            newSus.push(susFlagItem);
-            sus = newSus;
+            filtered.push(item);
         }
-    } else {
-        sus = [susFlagItem];
-    }
-    actorData.setFlag("world", "sustained", sus);
+    });
+    await actorData.setFlag("world", flag, filtered);
+    return theItem;
+}
+
+/**
+ * REMOVE SUSTAINED
+ * @param actorData
+ * @param spell
+ * @param targetName
+ * @returns {Promise<void>}
+ */
+export async function removeSustained(actorData, {spell = "", targetName = ""}) {
+    await removeSpellFlag(actorData, "sustained", {spell: spell, targetName: targetName});
 }
 
 /**
@@ -259,7 +261,18 @@ export async function setOngoing(actorData, value) {
     actorData.setFlag("world", "ongoing", ongoing);
 }
 
-/**&
+/**
+ * REMOVE ONGOING
+ * @param actorData
+ * @param spell
+ * @param targetName
+ * @returns {Promise<void>}
+ */
+export async function removeOngoing(actorData, {spell = "", targetName = ""}) {
+    await removeSpellFlag(actorData, "ongoing", {spell: spell, targetName: targetName});
+}
+
+/**
  * SET ACTIVE SPELL
  * Adds the spell to the list of currently active spells. This list is used when a spell is to be canceled.
  * @param actorData
@@ -267,39 +280,60 @@ export async function setOngoing(actorData, value) {
  * @returns {Promise<void>}
  */
 export async function setActiveSpell(actorData, data) {
-    console.log("DATA");
-    console.log(data);
-    let flag = actorData.getFlag("world", "activeSpells");
-    if (flag) {
-        flag.push(data);
+    await setSpellFlag(actorData, "activeSpells", data);
+}
+
+/**
+ * REMOVE ACTIVE SPELL
+ * @param actorData
+ * @param data
+ * @returns {Promise<void>}
+ */
+export async function removeActiveSpell(actorData, {spell = "", targetName = ""}) {
+    removeSpellFlag(actorData, "activeSpells", {spell: spell, targetName: targetName}).then(theSpell => {
+        if (theSpell)
+            theSpell.endSpell(actorData);
+    });
+}
+
+/**
+ * SET SPELL FLAG
+ * @param actorData
+ * @param flag
+ * @param data
+ * @returns {Promise<void>}
+ */
+async function setSpellFlag(actorData, flag, data) {
+    let currentFlag = actorData.getFlag("world", flag);
+    if (currentFlag) {
+        currentFlag.push(data);
     } else {
-        flag = [data];
+        currentFlag = [data];
     }
-    console.log("setFlag");
-    console.log(flag);
-    await actorData.setFlag("world", "activeSpells", flag);
+    await actorData.setFlag("world", flag, currentFlag);
 }
 
 /**
  * SET FORWARD
  * Set the 'going forward' bonus for an actor
  * @param target
- * @param type
- * @param value
+ * @param data
  * @returns {Promise<void>}
  */
-export async function setForward(target, type, value) {
-    let flag = target.getFlag("world", "forward");
-    let flagData = {
-        type: type,
-        value: value
-    };
-    if (flag) {
-        flag.push(flagData)
-    } else {
-        flag = [flagData];
-    }
-    await target.setFlag("world", "forward", flag);
+export async function setForward(target, data) {
+    await setSpellFlag(target, "forward", data);
+}
+
+/**
+ * REMOVE FORWARD
+ * @param target
+ * @param spell
+ * @returns {Promise<void>}
+ */
+export async function removeForward(target, spell) {
+    let ff = target.getFlag("world", "forward");
+    let fFiltered = ff.filter(f => f.type !== spell);
+    await target.setFlag("world", "forward", fFiltered);
 }
 
 /**

@@ -45,6 +45,11 @@ export async function clericSpell({actorData: actorData, spellName: spellName, t
 
 // ROTES =======================================================================================
 
+/**
+ * GUIDANCE
+ * @param actorData
+ * @returns {Promise<void>}
+ */
 export async function guidance(actorData) {
     sh.validateSpell({actorData: actorData, spell: "Guidance"}).then(v => {
         if (!v) return;
@@ -55,6 +60,11 @@ export async function guidance(actorData) {
     });
 }
 
+/**
+ * SANCTIFY
+ * @param actorData
+ * @returns {Promise<void>}
+ */
 export async function sanctify(actorData) {
     sh.validateSpell({actorData: actorData, spell: "Sanctify"}).then(v => {
         if (!v) return;
@@ -116,15 +126,8 @@ export async function bless(actorData) {
                 targetName: targetData.targetActor.name,
                 endSpell: function (actorData) {
                     let targetData = util.getTargets(actorData);
-                    // Remove penalty for sustaining the spell
-                    let sus = actorData.getFlag("world", "sustained");
-                    let filtered = sus.filter(e => e.name !== "bless");
-                    actorData.setFlag("world", "sustained", filtered);
-
-                    // Remove bonus from target
-                    let ff = targetData.targetActor.getFlag("world", "forward");
-                    let fFiltered = ff.filter(f => f.type !== "bless");
-                    targetData.targetActor.setFlag("world", "forward", fFiltered);
+                    sh.removeSustained(actorData, {spell: "bless", targetName: targetData.targetActor.name});
+                    sh.removeForward(targetData.targetActor, "bless");
 
                     // Cancel the animated effect
                     TokenMagic.deleteFilters(targetData.targetToken);
@@ -137,9 +140,8 @@ export async function bless(actorData) {
                 }
             };
 
-            sh.setActiveSpell(actorData, blessFlag);
-            sh.setSustained(actorData, "bless", 1);
-            sh.setForward(targetData.targetActor, "bless", 1);
+            sh.setSustained(actorData, {spell: "bless", targetName: targetData.targetActor.name, value: 1});
+            sh.setForward(targetData.targetActor, { type: "bless", value: 1});
 
             util.coloredChat({
                 actorData: actorData,
@@ -230,16 +232,31 @@ export async function cureLightWounds(actorData) {
     });
 }
 
+/**
+ * CAUSE FEAR
+ * @param actorData
+ * @returns {Promise<void>}
+ */
 export async function causeFear(actorData) {
     sh.validateSpell({actorData: actorData, spell: "Cause Fear"}).then(v => {
         if (!v) return;
 
         clericSpell({
             actorData: actorData, spellName: "Cause Fear"
+        }).then(r => {
+            if (!r) return;
+
+            sh.setActiveSpell(actorData, blessFlag);
+            sh.setSustained(actorData, {spell: "bless", targetName: targetData.targetActor.name, value: 1});
         });
     });
 }
 
+/**
+ * DETECT ALIGNMENT
+ * @param actorData
+ * @returns {Promise<void>}
+ */
 export async function detectAlignment(actorData) {
     sh.validateSpell({actorData: actorData, spell: "Detect Alignment"}).then(v => {
         if (!v) return;
@@ -250,16 +267,61 @@ export async function detectAlignment(actorData) {
     });
 }
 
+/**
+ * MAGIC WEAPON
+ * @param actorData
+ * @returns {Promise<void>}
+ */
 export async function magicWeapon(actorData) {
     sh.validateSpell({actorData: actorData, spell: "Magic Weapon"}).then(v => {
         if (!v) return;
 
         clericSpell({
             actorData: actorData, spellName: "Magic Weapon"
+        }).then(r => {
+            if (!r) return;
+
+            let currentMisc = actorData.data.data.attributes.attributes.damage.misc;
+
+            let flag = {
+                spell: "magicweapon",
+                targetName: actorData.name,
+                endSpell: function (actorData) {
+
+                    let dmgMisc = actorData.data.data.attributes.damage.misc;
+                    let newMisc;
+                    if (dmgMisc === "1d4") {
+                        newMisc = "";
+                    } else {
+                        let idx = dmgMisc.indexOf("+1d4");
+                        newMisc = dmgMisc.substring(0, idx);
+                        if (idx + 4 < dmgMisc.length) {
+                            newMisc += dmgMisc.substring(idx + 4);
+                        }
+                    }
+
+                    sh.removeSustained(actorData, {spell: "magicweapon", targetName: actorData.name});
+                    actorData.update({"data": {"attributes": {"damage": {"misc": newMisc}}}});
+                }
+            };
+
+            if (currentMisc) {
+                currentMisc += "+1d4";
+            } else {
+                currentMisc = "1d4";
+            }
+            sh.setActiveSpell(actorData, flag);
+            sh.setSustained(actorData, {spell: "magicweapon", targetName: actorData.name, value: 1});
+            actorData.update({"data": {"attributes": {"damage": {"misc": currentMisc}}}});
         });
     });
 }
 
+/**
+ * SANCTUARY
+ * @param actorData
+ * @returns {Promise<void>}
+ */
 export async function sanctuary(actorData) {
     sh.validateSpell({actorData: actorData, spell: "Sanctuary"}).then(v => {
         if (!v) return;
@@ -270,6 +332,11 @@ export async function sanctuary(actorData) {
     });
 }
 
+/**
+ * SPEAK WITH DEAD
+ * @param actorData
+ * @returns {Promise<void>}
+ */
 export async function speakWithDead(actorData) {
     sh.validateSpell({actorData: actorData, spell: "Speak With Dead"}).then(v => {
         if (!v) return;
