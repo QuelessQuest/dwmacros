@@ -12,6 +12,12 @@ import * as util from './dwUtils.js'
  */
 export async function wizardSpell({actorData: actorData, spellName: spellName, target: target = false}) {
     if (actorData) {
+        if (target) {
+            if (game.user.targets.size === 0) {
+                ui.notifications.warn("Spell requires a target.");
+                return;
+            }
+        }
         let flavor = "Your casting succeeds, however you must select one of the following options.";
         let options = [
             {
@@ -118,70 +124,74 @@ export async function telepathy(actorData) {
  */
 export async function invisibility(actorData) {
 
-    sh.validateSpell({actorData: actorData, spell: "Invisibility"}).then(v => {
-        if (!v) return;
+    let valid = sh.validateSpell({actorData: actorData, spell: "Invisibility"});
+    if (!valid) return;
 
-        wizardSpell({
-            actorData: actorData, spellName: "Invisibility"
-        }).then(r => {
-            let targetData = util.getTargets(actorData);
-            if (!r) {
-                TokenMagic.deleteFilters(targetData.targetToken);
-                return;
-            }
+    let cast = wizardSpell({actorData: actorData, spellName: "Invisibility"});
+    let targetData = util.getTargets(actorData);
+    if (!cast) {
+        await TokenMagic.deleteFilters(targetData.targetToken);
+        return;
+    }
 
-            let params =
-                [{
-                    filterType: "distortion",
-                    maskPath: "/modules/tokenmagic/fx/assets/waves-2.png",
-                    maskSpriteScaleX: 7,
-                    maskSpriteScaleY: 7,
-                    padding: 50,
-                    animated:
-                        {
-                            maskSpriteX: {active: true, speed: 0.05, animType: "move"},
-                            maskSpriteY: {active: true, speed: 0.07, animType: "move"}
-                        }
-                },
+    let params =
+        [{
+            filterType: "distortion",
+            maskPath: "/modules/tokenmagic/fx/assets/waves-2.png",
+            maskSpriteScaleX: 7,
+            maskSpriteScaleY: 7,
+            padding: 50,
+            animated:
+                {
+                    maskSpriteX: {active: true, speed: 0.05, animType: "move"},
+                    maskSpriteY: {active: true, speed: 0.07, animType: "move"}
+                }
+        },
+            {
+                filterType: "glow",
+                distance: 10,
+                outerStrength: 8,
+                innerStrength: 0,
+                color: 0xD6E6C3,
+                quality: 0.5,
+                animated:
                     {
-                        filterType: "glow",
-                        distance: 10,
-                        outerStrength: 8,
-                        innerStrength: 0,
-                        color: 0xD6E6C3,
-                        quality: 0.5,
-                        animated:
+                        color:
                             {
-                                color:
-                                    {
-                                        active: true,
-                                        loopDuration: 3000,
-                                        animType: "colorOscillation",
-                                        val1: 0xD6E6C3,
-                                        val2: 0xCDCFB7
-                                    }
+                                active: true,
+                                loopDuration: 3000,
+                                animType: "colorOscillation",
+                                val1: 0xD6E6C3,
+                                val2: 0xCDCFB7
                             }
                     }
-                ];
+            }
+        ];
 
-            TokenMagic.addFilters(targetData.targetToken, params);
+    await TokenMagic.addFilters(targetData.targetToken, params);
 
-            let invFlag = {
-                spell: "Invisibility",
-                targetName: targetData.targetActor.name,
-                data: {
-                    tokenId: targetData.targetToken.id
-                },
-                endSpell: function (actorData) {
-                    let targetData = util.getTargets(actorData);
-                    targetData.targetToken.update({"hidden": false});
-                }
-            };
+    let invFlag = {
+        spell: "Invisibility",
+        data: {
+            targetName: targetData.targetActor.name,
+            targetId: targetData.targetActor._id,
+            targetToken: targetData.targetToken.id,
+            updateData: {"hidden": false},
+            updateType: "Token",
+            startingWords: "",
+            middleWords: "has canceled the Invisibility on",
+            endWords: ""
+        }
+    };
 
-            targetData.targetToken.update({"hidden": true});
-            sh.setActiveSpell(actorData, invFlag);
-            TokenMagic.deleteFilters(targetData.targetToken);
-        })
+    await targetData.targetToken.update({"hidden": true});
+    await sh.setActiveSpell(actorData, invFlag);
+    await TokenMagic.deleteFilters(targetData.targetToken);
+
+    await util.coloredChat({
+        actorData: actorData,
+        target: targetData.targetActor,
+        middleWords: "casts Invisibility on"
     });
 }
 
@@ -192,72 +202,68 @@ export async function invisibility(actorData) {
  */
 export async function magicMissile(actorData) {
 
-    sh.validateSpell({actorData: actorData, spell: "Magic Missile", target: true}).then(v => {
-        if (!v) return;
+    let valid = await sh.validateSpell({actorData: actorData, spell: "Magic Missile", target: true});
+    if (!valid) return;
 
-        wizardSpell({
-            actorData: actorData, spellName: "Magic Missile", target: true,
-        }).then(r => {
-            if (!r) return;
+    let cast = await wizardSpell({actorData: actorData, spellName: "Magic Missile", target: true});
+    if (!cast) return;
 
-            let token = canvas.tokens.controlled[0]
-            let template = "modules/dwmacros/templates/chat/spell-dialog.html";
-            let missile = [{
-                filterType: "electric",
-                color: 0xFFFFFF,
-                time: 0,
-                blend: 1,
-                intensity: 5,
-                autoDestroy: true,
-                animated: {
-                    time: {
-                        active: true,
-                        speed: 0.0020,
-                        loopDuration: 1500,
-                        loops: 1,
-                        animType: "move"
-                    }
-                }
-            }];
+    let token = canvas.tokens.controlled[0]
+    let template = "modules/dwmacros/templates/chat/spell-dialog.html";
+    let missile = [{
+        filterType: "electric",
+        color: 0xFFFFFF,
+        time: 0,
+        blend: 1,
+        intensity: 5,
+        autoDestroy: true,
+        animated: {
+            time: {
+                active: true,
+                speed: 0.0020,
+                loopDuration: 1500,
+                loops: 1,
+                animType: "move"
+            }
+        }
+    }];
 
-            let roll = new Roll("2d4", {});
-            roll.roll();
-            roll.render().then(r => {
-                let templateData = {
-                    title: "title",
-                    flavor: "flavor",
-                    rollDw: r,
-                    style: ""
-                }
-                renderTemplate(template, templateData).then(content => {
-                    game.dice3d.showForRoll(roll).then(displayed => {
-                        let targetToken = game.user.targets.values().next().value;
-                        let targetActor = targetToken.actor;
-                        sh.launchProjectile(token, targetToken, "modules/dwmacros/assets/mm.png").then(() => {
-                            TokenMagic.addFiltersOnTargeted(missile);
-                            if (targetActor.permission !== CONST.ENTITY_PERMISSIONS.OWNER)
-                                // We need help applying the damagee, so make a roll message for right-click convenience.
-                                roll.toMessage({
-                                    speaker: ChatMessage.getSpeaker(),
-                                    flavor: `${actorData.name} casts Magic Missle on ${targetActor.data.name}.<br>
-                                                 <p><em>Manually apply ${roll.total} HP of damage to ${targetActor.data.name}</em></p>`
-                                });
-                            else {
-                                // We can apply damage automatically, so just show a normal chat message.
-                                util.coloredChat({
-                                    actorData: actorData,
-                                    middleWords: "casts Magic Missile on",
-                                    target: targetActor,
-                                    endWords: `for ${roll.total} HP`
-                                });
-                                game.actors.find(a => a._id === targetActor._id).update({
-                                    "data.attributes.hp.value": targetActor.data.data.attributes.hp.value - roll.total
-                                });
-                            }
-                        });
-                    });
-                });
-            });
+    let roll = new Roll("2d4", {});
+    roll.roll();
+    let rolled = await roll.render();
+    let templateData = {
+        title: "title",
+        flavor: "flavor",
+        rollDw: rolled,
+        style: ""
+    }
+
+    await renderTemplate(template, templateData);
+    await game.dice3d.showForRoll(roll);
+
+    let targetToken = game.user.targets.values().next().value;
+    let targetActor = targetToken.actor;
+
+    await sh.launchProjectile(token, targetToken, "modules/dwmacros/assets/mm.png");
+    await TokenMagic.addFiltersOnTargeted(missile);
+
+    if (targetActor.permission !== CONST.ENTITY_PERMISSIONS.OWNER)
+        // We need help applying the damagee, so make a roll message for right-click convenience.
+        roll.toMessage({
+            speaker: ChatMessage.getSpeaker(),
+            flavor: `${actorData.name} casts Magic Missle on ${targetActor.data.name}.<br>
+                    <p><em>Manually apply ${roll.total} HP of damage to ${targetActor.data.name}</em></p>`
         });
-    });
+    else {
+        // We can apply damage automatically, so just show a normal chat message.
+        await util.coloredChat({
+            actorData: actorData,
+            middleWords: "casts Magic Missile on",
+            target: targetActor,
+            endWords: `for ${roll.total} HP`
+        });
+        await game.actors.find(a => a._id === targetActor._id).update({
+            "data.attributes.hp.value": targetActor.data.data.attributes.hp.value - roll.total
+        });
+    }
 }

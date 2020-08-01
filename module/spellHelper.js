@@ -329,6 +329,18 @@ export async function removeActiveSpell(actorData, {spell = "", targetName = ""}
         await actorData.update({"data": {"attributes": {"damage": {"misc": newMisc}}}});
     }
 
+    if (data.updateData) {
+        switch(data.updateType) {
+            case "Token":
+                let xx = canvas.tokens.placeables.filter(placeable => placeable.id === data.targetToken);
+                let targetToken = xx[0];
+                await targetToken.update(data.updateData);
+                break;
+            case "Actor":
+                break;
+        }
+    }
+
     await util.coloredChat({
         actorData: actorData,
         target: targetActor,
