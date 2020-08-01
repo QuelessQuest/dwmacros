@@ -219,6 +219,7 @@ async function removeSpellFlag(actorData, flag, {spell = "", targetName = ""}) {
     let theItem = null;
 
     flagItem.forEach(item => {
+        console.log(item);
         if (item.spell === spell) {
             if (item.data.targetName === targetName) {
                 theItem = item;

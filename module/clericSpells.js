@@ -94,6 +94,7 @@ export async function bless(actorData) {
     }
 
     let bGlow =
+
         [{
             filterType: "zapshadow",
             alphaTolerance: 0.50
@@ -106,7 +107,7 @@ export async function bless(actorData) {
                 scale: 0.25,
                 time: 0,
                 auraIntensity: 0.5,
-                subAuraIntensity: 0.25,
+                subAuraIntensity: 2,
                 threshold: 0.25,
                 discard: false,
                 animated:
@@ -268,27 +269,35 @@ export async function magicWeapon(actorData) {
 
     let currentMisc = actorData.data.data.attributes.damage.misc;
 
-    /*
-        let blessFlag = {
-        spell: "Bless",
-        data: {
-            targetName: targetData.targetActor.name,
-            targetId: targetData.targetActor._id,
-            targetToken: targetData.targetToken.id,
-            sustained: true,
-            forward: true,
-            filter: true,
-            startingWords: "",
-            middleWords: "has canceled the Bless on",
-            endWords: ""
-        }
-    };
-     */
+    let params =
+        [
+            {
+                filterType: "ray",
+                time: 0,
+                color: 0x70BBFF,
+                alpha: 0.25,
+                divisor: 32,
+                anchorY: 0,
+                animated :
+                    {
+                        time :
+                            {
+                                active: true,
+                                speed: 0.0005,
+                                animType: "move"
+                            }
+                    }
+            }
+        ];
+
+    await TokenMagic.addFiltersOnSelected(params);
     let flag = {
         spell: "Magic Weapon",
         data: {
             targetName: actorData.name,
             sustained: true,
+            filter: true,
+            targetToken: canvas.tokens.controlled[0].id,
             damage: "1d4",
             middleWords: "cancels Magic Weapon"
         }
@@ -300,7 +309,7 @@ export async function magicWeapon(actorData) {
         currentMisc = "1d4";
     }
     await sh.setActiveSpell(actorData, flag);
-    await sh.setSustained(actorData, {spell: "Magic Weapon", targetName: actorData.name, value: 1});
+    await sh.setSustained(actorData, {spell: "Magic Weapon", data: {targetName: actorData.name, value: 1}});
     await actorData.update({"data": {"attributes": {"damage": {"misc": currentMisc}}}});
     await util.coloredChat({
         actorData: actorData,
