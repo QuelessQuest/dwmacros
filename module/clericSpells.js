@@ -83,72 +83,68 @@ export async function sanctify(actorData) {
  * @returns {Promise<void>}
  */
 export async function bless(actorData) {
-    sh.validateSpell({actorData: actorData, spell: "Bless"}).then(v => {
-        if (!v) return;
+    let valid = await sh.validateSpell({actorData: actorData, spell: "Bless"});
+    if (!valid) return;
 
-        clericSpell({
-            actorData: actorData, spellName: "Bless"
-        }).then(r => {
-            let targetData = util.getTargets(actorData);
-            if (!r) {
-                TokenMagic.deleteFilters(targetData.targetToken);
-                return;
-            }
+    let cast = await clericSpell({actorData: actorData, spellName: "Bless"});
+    let targetData = util.getTargets(actorData);
+    if (!cast) {
+        await TokenMagic.deleteFilters(targetData.targetToken);
+        return;
+    }
 
-            let bGlow = [
-                {
-                    filterType: "zapshadow",
-                    alphaTolerance: 0.60
-                },
-                {
-                    filterType: "outline",
-                    padding: 10,
-                    color: 0xACC1C6,
-                    thickness: 1,
-                    quality: 10,
-                    animated:
-                        {
-                            thickness:
-                                {
-                                    active: true,
-                                    loopDuration: 10000,
-                                    animType: "syncCosOscillation",
-                                    val1: 2,
-                                    val2: 6
-                                }
-                        }
-                }];
+    let bGlow =
+        [{
+            filterType: "zapshadow",
+            alphaTolerance: 0.50
+        },
+            {
+                filterType: "xglow",
+                auraType: 1,
+                color: 0x70BBFF,
+                thickness: 2,
+                scale: 0.25,
+                time: 0,
+                auraIntensity: 0.5,
+                subAuraIntensity: 0.25,
+                threshold: 0.25,
+                discard: false,
+                animated:
+                    {
+                        time:
+                            {
+                                active: true,
+                                speed: 0.0006,
+                                animType: "move"
+                            }
+                    }
+            }];
 
-            TokenMagic.addFilters(targetData.targetToken, bGlow);
+    await TokenMagic.addFilters(targetData.targetToken, bGlow);
 
-            let blessFlag = {
-                spell: "bless",
-                targetName: targetData.targetActor.name,
-                endSpell: function (actorData) {
-                    let targetData = util.getTargets(actorData);
-                    sh.removeSustained(actorData, {spell: "bless", targetName: targetData.targetActor.name});
-                    sh.removeForward(targetData.targetActor, "bless");
+    let blessFlag = {
+        spell: "Bless",
+        data: {
+            targetName: targetData.targetActor.name,
+            targetId: targetData.targetActor._id,
+            targetToken: targetData.targetToken.id,
+            sustained: true,
+            forward: true,
+            filter: true,
+            startingWords: "",
+            middleWords: "has canceled the Bless on",
+            endWords: ""
+        }
+    };
 
-                    // Cancel the animated effect
-                    TokenMagic.deleteFilters(targetData.targetToken);
+    await sh.setActiveSpell(actorData, blessFlag);
+    await sh.setSustained(actorData, {spell: "Bless", data: {targetName: targetData.targetActor.name, value: 1}});
+    await sh.setForward(targetData.targetActor, {type: "Bless", value: 1});
 
-                    util.coloredChat({
-                        actorData: actorData,
-                        target: targetData.targetActor,
-                        middleWords: "has canceled the Bless on"
-                    });
-                }
-            };
-
-            sh.setSustained(actorData, {spell: "bless", targetName: targetData.targetActor.name, value: 1});
-            sh.setForward(targetData.targetActor, { type: "bless", value: 1});
-
-            util.coloredChat({
-                actorData: actorData,
-                target: targetData.targetActor,
-                middleWords: "has Blessed"
-            });
-        })
+    await util.coloredChat({
+        actorData: actorData,
+        target: targetData.targetActor,
+        middleWords: "has Blessed"
     });
 }
 
@@ -159,77 +155,70 @@ export async function bless(actorData) {
  */
 export async function cureLightWounds(actorData) {
 
-    sh.validateSpell({actorData: actorData, spell: "Cure Light Wounds", target: true}).then(v => {
-        if (!v) return;
+    let valid = await sh.validateSpell({actorData: actorData, spell: "Cure Light Wounds", target: true});
+    if (!valid) return;
 
-        clericSpell({
-            actorData: actorData, spellName: "Cure Light Wounds", target: true
-        }).then(r => {
-            if (!r) return;
+    let cast = await clericSpell({actorData: actorData, spellName: "Cure Light Wounds", target: true})
+    if (!cast) return;
 
-            let template = "modules/dwmacros/templates/chat/spell-dialog.html";
-            let glow =
-                [{
-                    filterType: "outline",
-                    autoDestroy: true,
-                    padding: 10,
-                    color: 0xFFFFFF,
-                    thickness: 1,
-                    quality: 10,
-                    animated:
+    let template = "modules/dwmacros/templates/chat/spell-dialog.html";
+    let glow =
+        [{
+            filterType: "outline",
+            autoDestroy: true,
+            padding: 10,
+            color: 0xFFFFFF,
+            thickness: 1,
+            quality: 10,
+            animated:
+                {
+                    thickness:
                         {
-                            thickness:
-                                {
-                                    active: true,
-                                    loopDuration: 4000,
-                                    loops: 1,
-                                    animType: "syncCosOscillation",
-                                    val1: 1,
-                                    val2: 8
-                                }
+                            active: true,
+                            loopDuration: 4000,
+                            loops: 1,
+                            animType: "syncCosOscillation",
+                            val1: 1,
+                            val2: 8
                         }
-                }];
-
-            let roll = new Roll("1d8", {});
-            roll.roll();
-            TokenMagic.addFiltersOnTargeted(glow);
-            roll.render().then(r => {
-                let templateData = {
-                    title: "title",
-                    flavor: "flavor",
-                    rollDw: r,
-                    style: ""
                 }
-                renderTemplate(template, templateData).then(content => {
-                    game.dice3d.showForRoll(roll).then(displayed => {
-                        let targetActor = game.user.targets.values().next().value.actor;
-                        let maxHeal = Math.clamped(roll.result, 0,
-                            targetActor.data.data.attributes.hp.max - targetActor.data.data.attributes.hp.value);
+        }];
 
-                        if (targetActor.permission !== CONST.ENTITY_PERMISSIONS.OWNER)
-                            // We need help applying the healing, so make a roll message for right-click convenience.
-                            roll.toMessage({
-                                speaker: ChatMessage.getSpeaker(),
-                                flavor: `${actorData.name} casts Cure Light Wounds on ${targetActor.data.name}.<br>
+    let roll = new Roll("1d8", {});
+    roll.roll();
+    await TokenMagic.addFiltersOnTargeted(glow);
+    let rolled = await roll.render();
+    let templateData = {
+        title: "title",
+        flavor: "flavor",
+        rollDw: rolled,
+        style: ""
+    }
+    let content = await renderTemplate(template, templateData)
+    await game.dice3d.showForRoll(roll);
+    let targetActor = game.user.targets.values().next().value.actor;
+    let maxHeal = Math.clamped(roll.result, 0,
+        targetActor.data.data.attributes.hp.max - targetActor.data.data.attributes.hp.value);
+
+    if (targetActor.permission !== CONST.ENTITY_PERMISSIONS.OWNER)
+        // We need help applying the healing, so make a roll message for right-click convenience.
+        roll.toMessage({
+            speaker: ChatMessage.getSpeaker(),
+            flavor: `${actorData.name} casts Cure Light Wounds on ${targetActor.data.name}.<br>
                             <p><em>Manually apply ${maxHeal} HP of healing to ${targetActor.data.name}</em></p>`
-                            });
-                        else {
-                            // We can apply healing automatically, so just show a normal chat message.
-                            util.coloredChat({
-                                actorData: actorData,
-                                target: targetActor,
-                                middleWords: "casts Cure Light Wounds on",
-                                endWords: `for ${maxHeal} HP`
-                            });
-                            game.actors.find(a => a._id === targetActor._id).update({
-                                "data.attributes.hp.value": targetActor.data.data.attributes.hp.value + maxHeal
-                            });
-                        }
-                    });
-                });
-            })
-        })
-    });
+        });
+    else {
+        // We can apply healing automatically, so just show a normal chat message.
+        await util.coloredChat({
+            actorData: actorData,
+            target: targetActor,
+            middleWords: "casts Cure Light Wounds on",
+            endWords: `for ${maxHeal} HP`
+        });
+        game.actors.find(a => a._id === targetActor._id).update({
+            "data.attributes.hp.value": targetActor.data.data.attributes.hp.value + maxHeal
+        });
+    }
 }
 
 /**
@@ -246,8 +235,6 @@ export async function causeFear(actorData) {
         }).then(r => {
             if (!r) return;
 
-            sh.setActiveSpell(actorData, blessFlag);
-            sh.setSustained(actorData, {spell: "bless", targetName: targetData.targetActor.name, value: 1});
         });
     });
 }
@@ -273,47 +260,51 @@ export async function detectAlignment(actorData) {
  * @returns {Promise<void>}
  */
 export async function magicWeapon(actorData) {
-    sh.validateSpell({actorData: actorData, spell: "Magic Weapon"}).then(v => {
-        if (!v) return;
+    let valid = await sh.validateSpell({actorData: actorData, spell: "Magic Weapon"});
+    if (!valid) return;
 
-        clericSpell({
-            actorData: actorData, spellName: "Magic Weapon"
-        }).then(r => {
-            if (!r) return;
+    let cast = await clericSpell({actorData: actorData, spellName: "Magic Weapon"});
+    if (!cast) return;
 
-            let currentMisc = actorData.data.data.attributes.attributes.damage.misc;
+    let currentMisc = actorData.data.data.attributes.damage.misc;
 
-            let flag = {
-                spell: "magicweapon",
-                targetName: actorData.name,
-                endSpell: function (actorData) {
+    /*
+        let blessFlag = {
+        spell: "Bless",
+        data: {
+            targetName: targetData.targetActor.name,
+            targetId: targetData.targetActor._id,
+            targetToken: targetData.targetToken.id,
+            sustained: true,
+            forward: true,
+            filter: true,
+            startingWords: "",
+            middleWords: "has canceled the Bless on",
+            endWords: ""
+        }
+    };
+     */
+    let flag = {
+        spell: "Magic Weapon",
+        data: {
+            targetName: actorData.name,
+            sustained: true,
+            damage: "1d4",
+            middleWords: "cancels Magic Weapon"
+        }
+    };
 
-                    let dmgMisc = actorData.data.data.attributes.damage.misc;
-                    let newMisc;
-                    if (dmgMisc === "1d4") {
-                        newMisc = "";
-                    } else {
-                        let idx = dmgMisc.indexOf("+1d4");
-                        newMisc = dmgMisc.substring(0, idx);
-                        if (idx + 4 < dmgMisc.length) {
-                            newMisc += dmgMisc.substring(idx + 4);
-                        }
-                    }
-
-                    sh.removeSustained(actorData, {spell: "magicweapon", targetName: actorData.name});
-                    actorData.update({"data": {"attributes": {"damage": {"misc": newMisc}}}});
-                }
-            };
-
-            if (currentMisc) {
-                currentMisc += "+1d4";
-            } else {
-                currentMisc = "1d4";
-            }
-            sh.setActiveSpell(actorData, flag);
-            sh.setSustained(actorData, {spell: "magicweapon", targetName: actorData.name, value: 1});
-            actorData.update({"data": {"attributes": {"damage": {"misc": currentMisc}}}});
-        });
+    if (currentMisc) {
+        currentMisc += "+1d4";
+    } else {
+        currentMisc = "1d4";
+    }
+    await sh.setActiveSpell(actorData, flag);
+    await sh.setSustained(actorData, {spell: "Magic Weapon", targetName: actorData.name, value: 1});
+    await actorData.update({"data": {"attributes": {"damage": {"misc": currentMisc}}}});
+    await util.coloredChat({
+        actorData: actorData,
+        middleWords: "casts Magic Weapon"
     });
 }
 

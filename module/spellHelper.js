@@ -38,9 +38,9 @@ export async function castSpell({
     let sustained = actorData.getFlag("world", "sustained");
     let sus = 0;
     if (sustained) {
-        for (let idx = 0; idx < sustained.length; idx++) {
-            sus += sustained[idx].value;
-        }
+        sus = sustained.reduce(function (a, b) {
+            return a + b;
+        }, 0);
     }
     if (sus) {
         formula += `-${sus}`;
@@ -50,7 +50,7 @@ export async function castSpell({
     } else {
         ongoing = 0;
     }
-    if (mod && mod != 0) {
+    if (mod && mod !== 0) {
         formula += `+${mod}`;
     }
 
@@ -211,7 +211,7 @@ export async function setSustained(actorData, data) {
  * @param flag
  * @param spell
  * @param targetName
- * @returns {Promise<null>}
+ * @returns {Promise<{data: null, actorData: *}>}
  */
 async function removeSpellFlag(actorData, flag, {spell = "", targetName = ""}) {
     let flagItem = actorData.getFlag("world", flag);
@@ -220,7 +220,7 @@ async function removeSpellFlag(actorData, flag, {spell = "", targetName = ""}) {
 
     flagItem.forEach(item => {
         if (item.spell === spell) {
-            if (item.targetName === targetName) {
+            if (item.data.targetName === targetName) {
                 theItem = item;
             } else {
                 filtered.push(item);
@@ -229,8 +229,9 @@ async function removeSpellFlag(actorData, flag, {spell = "", targetName = ""}) {
             filtered.push(item);
         }
     });
+
     await actorData.setFlag("world", flag, filtered);
-    return theItem;
+    return {actorData: actorData, data: theItem};
 }
 
 /**
@@ -258,7 +259,7 @@ export async function setOngoing(actorData, value) {
     } else {
         ongoing = value;
     }
-    actorData.setFlag("world", "ongoing", ongoing);
+    await actorData.setFlag("world", "ongoing", ongoing);
 }
 
 /**
@@ -290,9 +291,49 @@ export async function setActiveSpell(actorData, data) {
  * @returns {Promise<void>}
  */
 export async function removeActiveSpell(actorData, {spell = "", targetName = ""}) {
-    removeSpellFlag(actorData, "activeSpells", {spell: spell, targetName: targetName}).then(theSpell => {
-        if (theSpell)
-            theSpell.endSpell(actorData);
+    let stuff = await removeSpellFlag(actorData, "activeSpells", {spell: spell, targetName: targetName});
+
+    let targetActor = null;
+    let data = stuff.data.data;
+
+    if (data.targetId) {
+        targetActor = game.actors.find(a => a._id === data.targetId);
+    }
+    if (data.sustained) {
+        await removeSustained(actorData, {spell: spell, targetName: data.targetName});
+    }
+    if (data.forward) {
+        await removeForward(targetActor, spell);
+    }
+
+    if (data.filter) {
+        let xx = canvas.tokens.placeables.filter(placeable => placeable.id === data.targetToken);
+        let targetToken = xx[0];
+        await TokenMagic.deleteFilters(targetToken);
+    }
+
+    if (data.damage) {
+        let dmgMisc = actorData.data.data.attributes.damage.misc;
+        let newMisc;
+        if (dmgMisc === "1d4") {
+            newMisc = "";
+        } else {
+            let idx = dmgMisc.indexOf("+1d4");
+            newMisc = dmgMisc.substring(0, idx);
+            if (idx + 4 < dmgMisc.length) {
+                newMisc += dmgMisc.substring(idx + 4);
+            }
+        }
+
+        await actorData.update({"data": {"attributes": {"damage": {"misc": newMisc}}}});
+    }
+
+    await util.coloredChat({
+        actorData: actorData,
+        target: targetActor,
+        startingWords: data.startingWords,
+        middleWords: data.middleWords,
+        endWords: data.endWords
     });
 }
 
@@ -433,19 +474,19 @@ export async function setSpells(actorData) {
             close: resolve
         }).render(true);
     });
-    let pLvls = 0;
+    let pLevels = 0;
     let pSpells = [];
     let upSpells = [];
     for (let idx = 0; idx < p.length; idx++) {
         if (p[idx].checked) {
             pSpells.push(p[idx].name);
-            pLvls += parseInt(p[idx].value);
+            pLevels += parseInt(p[idx].value);
         } else {
             upSpells.push(p[idx].name);
         }
 
     }
-    if (pLvls > lvlTotal) {
+    if (pLevels > lvlTotal) {
         ui.notifications.warn(`${actorData.name} can only prepare ${lvlTotal} levels of spells`);
     } else {
         pSpells.forEach(ps => {
@@ -468,8 +509,8 @@ export async function setSpells(actorData) {
                 actorData.updateOwnedItem(updatedItem);
             }
         });
-        actorData.setFlag("world", "ongoing", null);
-        util.coloredChat({
+        await actorData.setFlag("world", "ongoing", null);
+        await util.coloredChat({
             actorData: actorData,
             middleWords: "has finished preparing spells",
         });

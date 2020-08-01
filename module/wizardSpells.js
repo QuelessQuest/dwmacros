@@ -167,7 +167,7 @@ export async function invisibility(actorData) {
             TokenMagic.addFilters(targetData.targetToken, params);
 
             let invFlag = {
-                spell: "invisibility",
+                spell: "Invisibility",
                 targetName: targetData.targetActor.name,
                 data: {
                     tokenId: targetData.targetToken.id

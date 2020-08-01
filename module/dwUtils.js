@@ -2,11 +2,11 @@
  * If the actor and or target are characters, return the player color
  * @param actorData
  * @param target
- * @returns {Promise<{source: string, target: string}>}
+ * @returns {{source: string, target: string}}
  */
 export function getColors(actorData, target) {
 
-    let gcolors = {
+    let gColors = {
         source: "#000000",
         target: "#000000"
     }
@@ -14,21 +14,30 @@ export function getColors(actorData, target) {
     if (actorData) {
         let sourceUser = game.users.find(u => u.data.character === actorData._id);
         if (sourceUser) {
-            gcolors.source = sourceUser.data.color;
+            gColors.source = sourceUser.data.color;
         }
     }
 
     if (target) {
         let targetUser = game.users.find(u => u.data.character === target._id);
         if (targetUser) {
-            gcolors.target = targetUser.data.color;
+            gColors.target = targetUser.data.color;
         }
     }
 
-    return gcolors;
+    return gColors;
 }
 
-export function coloredChat({
+/**
+ * COLORED CHAT
+ * @param actorData
+ * @param target
+ * @param startingWords
+ * @param middleWords
+ * @param endWords
+ * @returns {Promise<void>}
+ */
+export async function coloredChat({
                                 actorData = null,
                                 target = null,
                                 startingWords = "",
@@ -52,7 +61,7 @@ export function coloredChat({
         endWords: endWords
     }
 
-    renderTemplate(template, templateData).then(content => {
+    await renderTemplate(template, templateData).then(content => {
         ChatMessage.create({
             speaker: ChatMessage.getSpeaker(),
             content: content
@@ -60,12 +69,18 @@ export function coloredChat({
     });
 }
 
+/**
+ * GET TARGETS
+ * @param actorData
+ * @returns {{targetActor: *, targetToken: PlaceableObject}}
+ */
 export function getTargets(actorData) {
     let targetActor;
     let targetToken;
     if (game.user.targets.size > 0) {
         targetActor = game.user.targets.values().next().value.actor;
-        targetToken = canvas.tokens.placeables.filter(placeable => placeable.isTargeted)[0];
+        let xx = canvas.tokens.placeables.filter(placeable => placeable.isTargeted);
+        targetToken = xx[0];
     } else {
         targetActor = actorData;
         targetToken = canvas.tokens.controlled[0];
