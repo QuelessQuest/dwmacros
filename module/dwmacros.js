@@ -171,21 +171,3 @@ Hooks.on("ready", () => {
     console.log("DW Hook -> ready");
     window.DWMacros = DWM;
 });
-
-/*
-Hooks.on('renderChatMessage', (data, html, options) => {
-    console.log("CHAT HOOK");
-    html.find('.colored-dialog').
-    // Determine visibility.
-    let chatData = data.data;
-    const whisper = chatData.whisper || [];
-    const isBlind = whisper.length && chatData.blind;
-    const isVisible = (whisper.length) ? game.user.isGM || whisper.includes(game.user._id) || (!isBlind) : true;
-    if (!isVisible) {
-        html.find('.dice-formula').text('???');
-        html.find('.dice-total').text('?');
-        html.find('.dice-tooltip').remove();
-    }
-});
-
- */

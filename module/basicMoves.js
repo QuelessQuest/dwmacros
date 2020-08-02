@@ -9,7 +9,6 @@ export async function basicMove({
                                     speaker = null,
                                     options = []
                                 }) {
-
     let baseFormula = '2d6';
     let moveData = actorData.items.find(i => i.name.toLowerCase() === move.toLowerCase());
     let ability = moveData.data.data.rollType.toLowerCase();
@@ -26,10 +25,26 @@ export async function basicMove({
     if (frw) {
         formula += `+${frw}`;
     }
+    let sus = 0;
+    let ongoing = 0;
+    if (move.toLowerCase() === "cast a spell") {
+        let sustained = actorData.getFlag("world", "sustained");
+        if (sustained) {
+            for (let sSpell of sustained) {
+                sus += sSpell.data.value;
+            }
+        }
+        if (sus) {
+            formula += `-${sus}`;
+        }
+        ongoing = actorData.getFlag("world", "ongoing");
+        if (ongoing) {
+            formula += `+${ongoing}`;
+        }
+    }
     if (mod && mod !== 0) {
         formula += `+${mod}`;
     }
-
     let cRoll = new Roll(`${formula}`);
     cRoll.roll();
     let rolled = await cRoll.render();
@@ -40,6 +55,8 @@ export async function basicMove({
         title: title,
         ability: ability.charAt(0).toUpperCase() + ability.slice(1),
         mod: abilityMod,
+        ongoing: ongoing,
+        sustained: sus ? `-${sus}` : 0,
         forward: frw ? `+${frw}` : 0,
         rollDw: rolled,
         sourceColor: gColors.source,

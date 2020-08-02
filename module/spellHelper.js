@@ -43,6 +43,16 @@ export async function castSpell({
     if (sus) {
         formula += `-${sus}`;
     }
+    let frw = 0;
+    let forward = actorData.getFlag("world", "forward");
+    if (forward) {
+        frw = forward.reduce(function (a, b) {
+            return a + b;
+        }, 0);
+    }
+    if (frw) {
+        formula += `+${frw}`;
+    }
     if (ongoing) {
         formula += `+${ongoing}`;
     } else {

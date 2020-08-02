@@ -1,16 +1,18 @@
 import * as sh from './spellHelper.js'
 import * as util from './dwUtils.js'
+import * as basic from './basicMoves.js'
 
 /**
  * ClericSpell
  * Used to cast all Cleric Spells. Provides the Success with Consequences dialog if necessary
  * @param actorData
  * @param spellName
+ * @param move
  * @param target
  * @param post
  * @returns {Promise<*>}
  */
-export async function clericSpell({actorData: actorData, spellName: spellName, target: target = false}) {
+export async function clericSpell({actorData: actorData, spellName: spellName, move: move, target: target = false}) {
     if (actorData) {
         if (target) {
             if (game.user.targets.size === 0) {
@@ -18,26 +20,100 @@ export async function clericSpell({actorData: actorData, spellName: spellName, t
                 return;
             }
         }
-        let flavor = "Your casting succeeds, however you must select one of the following options.";
-        let options = [
-            {
-                icon: `<i class="fas fa-eye"></i>`,
-                label: "You draw unwelcome attention or put yourself in a spot",
-                detail: `Conditional Casting.<br>${actorData.name} draws unwelcome attention or is put in a spot`
-            },
-            {
-                icon: `<i class="fas fa-angry"></i>`,
-                label: "Your casting distances you from your deity",
-                detail: `Conditional Casting.<br>${actorData.name} distances themselves from their deity`
-            },
-            {
-                icon: `<i class="fas fa-ban"></i>`,
-                label: "After you cast it, the spell is revoked by your deity",
-                detail: `Conditional Casting.<br>${actorData.name} has the spell revoked by their deity`
-            }
-        ];
 
-        return sh.castSpell(({actorData: actorData, dialogFlavor: flavor, options: options, title: spellName}));
+        console.log("A");
+        let targetData = util.getTargets(actorData);
+        console.log("B");
+        let flavor = "Your casting succeeds, however you must select one of the following options.";
+        console.log("C");
+        let options = {
+            success: {
+                details: {
+                    middleWords: `Successfully Casts ${spellName} on`
+                },
+                style: "background: rgba(0, 255, 0, 0.1)",
+                result: "NORMAL"
+            },
+            fail: {
+                details: {
+                    middleWords: `Failed to Cast ${spellName}`
+                },
+                style: "background: rgba(255, 0, 0, 0.1)",
+                result: "FAILED"
+            },
+            pSuccess: {
+                style: "background: rgba(255, 255, 0, 0.1)",
+                result: [
+                    {
+                        key: "opt1",
+                        icon: `<i class="fas fa-eye"></i>`,
+                        label: "You draw unwelcome attention or put yourself in a spot",
+                        details: {
+                            middleWords: `Successfully Casts ${spellName} on`,
+                            endWords: "but draws unwelcome attention or is put in a spot"
+                        },
+                        result: "NORMAL"
+                    },
+                    {
+                        key: "opt2",
+                        icon: `<i class="fas fa-angry"></i>`,
+                        label: "Your casting distances you from your deity",
+                        details: {
+                            middleWords: `Successfully Casts ${spellName} on`,
+                            endWords: "But distances themselves from their deity"
+                        },
+                        result: "DISTANCED"
+                    },
+                    {
+                        key: "opt3",
+                        icon: `<i class="fas fa-ban"></i>`,
+                        label: "After you cast it, the spell is revoked by your deity",
+                        details: {
+                            middleWords: `Successfully Casts ${spellName} on`,
+                            endWords: "but has the spell revoked by their deity"
+                        },
+                        result: "REVOKED"
+                    }
+                ]
+            }
+        };
+        console.log("D");
+
+        let cast = await basic.basicMove({
+            actorData: actorData,
+            targetActor: targetData.targetActor,
+            flavor: flavor,
+            title: spellName,
+            move: move,
+            options: options
+        });
+            console.log("CAST");
+            console.log(cast);
+            let success = false;
+            switch (cast) {
+                case "FAILED":
+                    let targetData = util.getTargets(actorData);
+                    await TokenMagic.deleteFilters(targetData.targetToken);
+                    break;
+                case "DISTANCED":
+                    await sh.setOngoing(actorData, -1);
+                    success =  true;
+                    break;
+                case "REVOKED":
+                    let spell = actorData.data.items.find(i => i.name.toLowerCase() === title.toLowerCase());
+                    let sId = spell._id;
+                    const item = actorData.getOwnedItem(sId);
+                    if (item) {
+                        let updatedItem = duplicate(item);
+                        updatedItem.data.prepared = true;
+                        await actorData.updateOwnedItem(updatedItem);
+                    }
+                    success = true;
+                    break;
+                default:
+                    success = true;
+            }
+            return new Promise(resolve => { resolve(success); });
     } else {
         ui.notifications.warn("Please select a token.");
     }
@@ -86,15 +162,12 @@ export async function bless(actorData) {
     let valid = await sh.validateSpell({actorData: actorData, spell: "Bless"});
     if (!valid) return;
 
-    let cast = await clericSpell({actorData: actorData, spellName: "Bless"});
+    let cast = await clericSpell({actorData: actorData, spellName: "Bless", move: "Cast A Spell"});
+    if (!cast) return;
+
     let targetData = util.getTargets(actorData);
-    if (!cast) {
-        await TokenMagic.deleteFilters(targetData.targetToken);
-        return;
-    }
 
     let bGlow =
-
         [{
             filterType: "zapshadow",
             alphaTolerance: 0.50
@@ -279,9 +352,9 @@ export async function magicWeapon(actorData) {
                 alpha: 0.25,
                 divisor: 32,
                 anchorY: 0,
-                animated :
+                animated:
                     {
-                        time :
+                        time:
                             {
                                 active: true,
                                 speed: 0.0005,

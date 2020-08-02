@@ -118,7 +118,6 @@ export async function processChoice({
             buttons: getButtons(options, template, templateData, chatData, resolve),
         }, {width: 450, classes: ["dwmacros", "dialog"]});
         dialog.render(true);
-        console.log(dialog);
     });
 }
 
