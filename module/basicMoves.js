@@ -1,4 +1,5 @@
 import * as util from './dwUtils.js'
+import {DWconst} from './DWconst.js'
 
 export async function basicMove({
                                     actorData = {},
@@ -49,7 +50,6 @@ export async function basicMove({
     cRoll.roll();
     let rolled = await cRoll.render();
     let gColors = util.getColors(actorData, targetActor);
-    let template = "modules/dwmacros/templates/chat/move-dialog.html";
 
     let templateData = {
         title: title,
@@ -73,7 +73,7 @@ export async function basicMove({
     if (cRoll.total >= 10) {
         return await util.renderDiceResults({
             options: options.success,
-            template: template,
+            template: DWconst.template,
             templateData: templateData,
             speaker: speaker,
             flavor: flavor,
@@ -82,7 +82,7 @@ export async function basicMove({
     } else if (cRoll.total <= 6) {
         return await util.renderDiceResults({
             options: options.fail,
-            template: template,
+            template: DWconst.template,
             templateData: templateData,
             speaker: speaker,
             flavor: flavor,
@@ -91,7 +91,7 @@ export async function basicMove({
     } else {
         return await util.renderDiceResults({
             options: options.pSuccess,
-            template: template,
+            template: DWconst.template,
             templateData: templateData,
             speaker: speaker,
             flavor: flavor,
@@ -134,7 +134,7 @@ export async function hackAndSlash(actorData) {
                 result: [
                     {
                         key: "opt1",
-                        icon: `<i class="fas fa-eye"></i>`,
+                        icon: `<i class="fas fa-dice-d6"></i>`,
                         label: "Your Attack deals +1d6 Damage, but you open yourself up to attack.",
                         details: {
                             middleWords: "Successfully Attacks",
@@ -144,7 +144,7 @@ export async function hackAndSlash(actorData) {
                     },
                     {
                         key: "opt2",
-                        icon: `<i class="fas fa-angry"></i>`,
+                        icon: `<i class="fas fa-bacon"></i>`,
                         label: "Deal your damage to the enemy and avoid their attack",
                         details: {
                             middleWords: "Successfully Attacks",

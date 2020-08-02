@@ -1,5 +1,6 @@
 import * as sh from './spellHelper.js'
 import * as util from './dwUtils.js'
+import {DWconst} from './DWconst.js'
 
 /**
  * WizardSpell

@@ -1,6 +1,8 @@
 import * as sh from './spellHelper.js'
 import * as util from './dwUtils.js'
 import * as basic from './basicMoves.js'
+import {getColors} from "./dwUtils.js";
+import {DWconst} from './DWconst.js'
 
 /**
  * ClericSpell
@@ -21,11 +23,8 @@ export async function clericSpell({actorData: actorData, spellName: spellName, m
             }
         }
 
-        console.log("A");
         let targetData = util.getTargets(actorData);
-        console.log("B");
         let flavor = "Your casting succeeds, however you must select one of the following options.";
-        console.log("C");
         let options = {
             success: {
                 details: {
@@ -77,7 +76,6 @@ export async function clericSpell({actorData: actorData, spellName: spellName, m
                 ]
             }
         };
-        console.log("D");
 
         let cast = await basic.basicMove({
             actorData: actorData,
@@ -87,33 +85,34 @@ export async function clericSpell({actorData: actorData, spellName: spellName, m
             move: move,
             options: options
         });
-            console.log("CAST");
-            console.log(cast);
-            let success = false;
-            switch (cast) {
-                case "FAILED":
-                    let targetData = util.getTargets(actorData);
-                    await TokenMagic.deleteFilters(targetData.targetToken);
-                    break;
-                case "DISTANCED":
-                    await sh.setOngoing(actorData, -1);
-                    success =  true;
-                    break;
-                case "REVOKED":
-                    let spell = actorData.data.items.find(i => i.name.toLowerCase() === title.toLowerCase());
-                    let sId = spell._id;
-                    const item = actorData.getOwnedItem(sId);
-                    if (item) {
-                        let updatedItem = duplicate(item);
-                        updatedItem.data.prepared = true;
-                        await actorData.updateOwnedItem(updatedItem);
-                    }
-                    success = true;
-                    break;
-                default:
-                    success = true;
-            }
-            return new Promise(resolve => { resolve(success); });
+
+        let success = false;
+        switch (cast) {
+            case "FAILED":
+                let targetData = util.getTargets(actorData);
+                await TokenMagic.deleteFilters(targetData.targetToken);
+                break;
+            case "DISTANCED":
+                await sh.setOngoing(actorData, -1);
+                success = true;
+                break;
+            case "REVOKED":
+                let spell = actorData.data.items.find(i => i.name.toLowerCase() === title.toLowerCase());
+                let sId = spell._id;
+                const item = actorData.getOwnedItem(sId);
+                if (item) {
+                    let updatedItem = duplicate(item);
+                    updatedItem.data.prepared = true;
+                    await actorData.updateOwnedItem(updatedItem);
+                }
+                success = true;
+                break;
+            default:
+                success = true;
+        }
+        return new Promise(resolve => {
+            resolve(success);
+        });
     } else {
         ui.notifications.warn("Please select a token.");
     }
@@ -232,12 +231,16 @@ export async function cureLightWounds(actorData) {
     let valid = await sh.validateSpell({actorData: actorData, spell: "Cure Light Wounds", target: true});
     if (!valid) return;
 
-    let cast = await clericSpell({actorData: actorData, spellName: "Cure Light Wounds", target: true})
+    let cast = await clericSpell({actorData: actorData, spellName: "Cure Light Wounds", move: "Cast A Spell", target: true})
     if (!cast) return;
 
-    let template = "modules/dwmacros/templates/chat/spell-dialog.html";
-    let glow =
-        [{
+    let targetData = util.getTargets(actorData);
+    let glow = [
+        {
+            filterType: "zapshadow",
+            alphaTolerance: 0.50
+        },
+        {
             filterType: "outline",
             autoDestroy: true,
             padding: 10,
@@ -258,40 +261,45 @@ export async function cureLightWounds(actorData) {
                 }
         }];
 
+    await TokenMagic.addFiltersOnTargeted(glow);
     let roll = new Roll("1d8", {});
     roll.roll();
-    await TokenMagic.addFiltersOnTargeted(glow);
     let rolled = await roll.render();
-    let templateData = {
-        title: "title",
-        flavor: "flavor",
-        rollDw: rolled,
-        style: ""
-    }
-
-    await renderTemplate(template, templateData)
     await game.dice3d.showForRoll(roll);
-    let targetActor = game.user.targets.values().next().value.actor;
-    let maxHeal = Math.clamped(roll.result, 0,
-        targetActor.data.data.attributes.hp.max - targetActor.data.data.attributes.hp.value);
 
-    if (targetActor.permission !== CONST.ENTITY_PERMISSIONS.OWNER)
-        // We need help applying the healing, so make a roll message for right-click convenience.
+    let maxHeal = Math.clamped(roll.result, 0,
+        targetData.targetActor.data.data.attributes.hp.max - targetData.targetActor.data.data.attributes.hp.value);
+
+    if (targetData.targetActor.permission !== CONST.ENTITY_PERMISSIONS.OWNER)
         roll.toMessage({
             speaker: ChatMessage.getSpeaker(),
             flavor: `${actorData.name} casts Cure Light Wounds on ${targetActor.data.name}.<br>
                             <p><em>Manually apply ${maxHeal} HP of healing to ${targetActor.data.name}</em></p>`
         });
     else {
-        // We can apply healing automatically, so just show a normal chat message.
-        await util.coloredChat({
-            actorData: actorData,
-            target: targetActor,
+        let gColors = getColors(actorData, targetData.targetActor);
+        let sName = actorData ? actorData.name : "";
+        let tName = targetData.targetActor ? targetData.targetActor.name : "";
+        let templateData = {
+            sourceColor: gColors.source,
+            sourceName: sName,
+            targetColor: gColors.target,
+            targetName: tName,
             middleWords: "casts Cure Light Wounds on",
-            endWords: `for ${maxHeal} HP`
-        });
-        game.actors.find(a => a._id === targetActor._id).update({
-            "data.attributes.hp.value": targetActor.data.data.attributes.hp.value + maxHeal
+            endWords: `for ${maxHeal} HP`,
+            title: "Healing",
+            base: "1d8",
+            rollDw: rolled
+        }
+        renderTemplate(DWconst.template, templateData).then(content => {
+            let chatData = {
+                speaker: ChatMessage.getSpeaker(),
+                content: content
+            };
+            ChatMessage.create(chatData);
+            targetData.targetActor.update({
+                "data.attributes.hp.value": targetData.targetActor.data.data.attributes.hp.value + maxHeal
+            })
         });
     }
 }

@@ -1,4 +1,5 @@
 import * as util from './dwUtils.js'
+import {DWconst} from './DWconst.js'
 
 /**
  * Cast Spell
@@ -7,11 +8,9 @@ import * as util from './dwUtils.js'
  * @param dialogFlavor
  * @param flavor
  * @param title
- * @param template
  * @param details
  * @param speaker
  * @param options
- * @param dialogOptions
  * @returns {Promise<void>}
  */
 export async function castSpell({
@@ -19,7 +18,6 @@ export async function castSpell({
                                     dialogFlavor = null,
                                     flavor = null,
                                     title = null,
-                                    template = null,
                                     details = {},
                                     speaker = null,
                                     options = []
@@ -65,7 +63,6 @@ export async function castSpell({
     let cRoll = new Roll(`${formula}`);
     cRoll.roll();
 
-    template = template || "modules/dwmacros/templates/chat/spell-dialog.html";
     let templateData = {
         title: title,
         flavor: flavor,
@@ -84,7 +81,7 @@ export async function castSpell({
         if (cRoll.total >= 10) {
             templateData.details = "Successful Casting";
             templateData.style = "background: rgba(0, 255, 0, 0.1)";
-            return renderTemplate(template, templateData).then(content => {
+            return renderTemplate(DWconst.template, templateData).then(content => {
                 chatData.content = content;
                 ChatMessage.create(chatData);
                 return true;
@@ -93,7 +90,7 @@ export async function castSpell({
         } else if (cRoll.total <= 6) {
             templateData.details = "Failed Casting";
             templateData.style = "background: rgba(255, 0, 0, 0.1)";
-            return renderTemplate(template, templateData).then(content => {
+            return renderTemplate(DWconst.template, templateData).then(content => {
                 chatData.content = content;
                 ChatMessage.create(chatData);
                 return false;
@@ -113,7 +110,7 @@ export async function castSpell({
                             label: opt1.label,
                             callback: () => {
                                 templateData.details = opt1.detail;
-                                renderTemplate(template, templateData).then(content => {
+                                renderTemplate(DWconst.template, templateData).then(content => {
                                     chatData.content = content;
                                     ChatMessage.create(chatData);
                                 });
@@ -124,7 +121,7 @@ export async function castSpell({
                             label: opt2.label,
                             callback: () => {
                                 templateData.details = opt2.detail;
-                                renderTemplate(template, templateData).then(content => {
+                                renderTemplate(DWconst.template, templateData).then(content => {
                                     chatData.content = content;
                                     ChatMessage.create(chatData);
                                 });
@@ -136,7 +133,7 @@ export async function castSpell({
                             label: opt3.label,
                             callback: () => {
                                 templateData.details = opt3.detail;
-                                renderTemplate(template, templateData).then(content => {
+                                renderTemplate(DWconst.template, templateData).then(content => {
                                     chatData.content = content;
                                     ChatMessage.create(chatData);
                                 });

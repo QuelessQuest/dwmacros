@@ -1,3 +1,5 @@
+import {DWconst} from './DWconst.js'
+
 /**
  * If the actor and or target are characters, return the player color
  * @param actorData
@@ -211,9 +213,6 @@ export async function doDamage({actorData = null, targetActor = null, damageMod 
     let roll = new Roll(formula, {});
     roll.roll();
     let rolled = await roll.render();
-
-    let template = "modules/dwmacros/templates/chat/damage-dialog.html";
-
     let damage = roll.total;
     await game.dice3d.showForRoll(roll);
 
@@ -242,7 +241,7 @@ export async function doDamage({actorData = null, targetActor = null, damageMod 
             rollDw: rolled
         }
 
-        renderTemplate(template, templateData).then(content => {
+        renderTemplate(DWconst.template, templateData).then(content => {
             let chatData = {
                 speaker: ChatMessage.getSpeaker(),
                 content: content
