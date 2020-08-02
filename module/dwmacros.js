@@ -106,8 +106,8 @@ export function DWMacros() {
         return sh.setSpells(actorData);
     }
 
-    async function gcolors(actorData) {
-        return util.getColors(actorData, game.user.targets.values().next().value.actor);
+    async function notDead() {
+        await canvas.tokens.controlled[0].toggleOverlay(null);
     }
 
     /**
@@ -116,6 +116,10 @@ export function DWMacros() {
 
     async function doHackAndSlash(actorData) {
         return basic.hackAndSlash(actorData);
+    }
+
+    async function doVolley(actorData) {
+        return basic.volley(actorData);
     }
 
     /**
@@ -156,12 +160,13 @@ export function DWMacros() {
         castInvisibility: castInvisibility,
         castAlarm: castAlarm,
         doHackAndSlash: doHackAndSlash,
+        doVolley: doVolley,
         druidShapeshift: druidShapeshift,
         castMagicMissile: castMagicMissile,
         prepareSpells: prepareSpells,
         showToken: showToken,
         showActor: showActor,
-        gcolors: gcolors
+        notDead: notDead
     }
 }
 

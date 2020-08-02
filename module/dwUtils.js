@@ -198,7 +198,7 @@ export async function renderDiceResults({
     }
 }
 
-export async function doDamage({actorData = null, targetActor = null, damageMod = null}) {
+export async function doDamage({actorData = null, targetData = null, damageMod = null}) {
 
     let base = actorData.data.data.attributes.damage.value;
     let formula = base;
@@ -214,18 +214,20 @@ export async function doDamage({actorData = null, targetActor = null, damageMod 
     roll.roll();
     let rolled = await roll.render();
     let damage = roll.total;
+    if (damage < 1) damage = 1;
+
     await game.dice3d.showForRoll(roll);
 
-    if (targetActor.permission !== CONST.ENTITY_PERMISSIONS.OWNER)
+    if (targetData.targetActor.permission !== CONST.ENTITY_PERMISSIONS.OWNER)
         roll.toMessage({
             speaker: ChatMessage.getSpeaker(),
-            flavor: `${actorData.name} hits ${targetActor.data.name}.<br>
-                            <p><em>Manually apply ${damage} damage to ${targetActor.data.name}</em></p>`
+            flavor: `${actorData.name} hits ${targetData.targetActor.data.name}.<br>
+                            <p><em>Manually apply ${damage} damage to ${targetData.targetActor.data.name}</em></p>`
         });
     else {
-        let gColors = getColors(actorData, targetActor);
+        let gColors = getColors(actorData, targetData.targetActor);
         let sName = actorData ? actorData.name : "";
-        let tName = targetActor ? targetActor.name : "";
+        let tName = targetData.targetActor ? targetData.targetActor.name : "";
 
         let templateData = {
             sourceColor: gColors.source,
@@ -247,10 +249,13 @@ export async function doDamage({actorData = null, targetActor = null, damageMod 
                 content: content
             };
             ChatMessage.create(chatData);
-            let hp = targetActor.data.data.attributes.hp.value - damage;
-            targetActor.update({
+            let hp = targetData.targetActor.data.data.attributes.hp.value - damage;
+            targetData.targetActor.update({
                 "data.attributes.hp.value": hp < 0 ? 0 : hp
             })
+            if (hp <= 0) {
+                targetData.targetToken.toggleOverlay(CONFIG.controlIcons.defeated);
+            }
         });
     }
 }

@@ -112,52 +112,73 @@ export async function unseenServant(actorData) {
 // FIRST LEVEL =======================================================================================
 
 export async function alarm(actorData) {
-    sh.validateSpell({actorData: actorData, spell: "Alarm"}).then(v => {
-        if (!v) return;
+    let valid = await sh.validateSpell({actorData: actorData, spell: "Alarm"});
+    if (!valid) return;
 
-        wizardSpell({
-            actorData: actorData, spellName: "Alarm"
-        });
+    let cast = await wizardSpell({actorData: actorData, spellName: "Alarm", move: "Cast A Spell"});
+    if (!cast) return;
+
+    await util.coloredChat({
+        actorData: actorData,
+        middleWords: "sets and alarm"
     });
 }
 
 export async function charmPerson(actorData) {
-    sh.validateSpell({actorData: actorData, spell: "Charm Person"}).then(v => {
-        if (!v) return;
+    let valid = await sh.validateSpell({actorData: actorData, spell: "Charm Person", target: true});
+    if (!valid) return;
 
-        wizardSpell({
-            actorData: actorData, spellName: "Charm Person"
-        });
+    let cast = await wizardSpell({actorData: actorData, spellName: "Charm Person", move: "Cast A Spell", target: true});
+    if (!cast) return;
+
+    let targetData = util.getTargets(actorData);
+
+    await util.coloredChat({
+        actorData: actorData,
+        target: targetData.targetActor,
+        middleWords: "charms"
     });
 }
 
 export async function contactSpirits(actorData) {
-    sh.validateSpell({actorData: actorData, spell: "Contact Spirits"}).then(v => {
-        if (!v) return;
+    let valid = await sh.validateSpell({actorData: actorData, spell: "Contact Spirits"});
+    if (!valid) return;
 
-        wizardSpell({
-            actorData: actorData, spellName: "Contact Spirits"
-        });
+    let cast = await wizardSpell({actorData: actorData, spellName: "Contact Spirits", move: "Cast A Spell"});
+    if (!cast) return;
+
+    await util.coloredChat({
+        actorData: actorData,
+        middleWords: "sets about contacting the spirits"
     });
 }
 
 export async function detectMagic(actorData) {
-    sh.validateSpell({actorData: actorData, spell: "Detect Magic"}).then(v => {
-        if (!v) return;
+    let valid = await sh.validateSpell({actorData: actorData, spell: "Detect Magic"});
+    if (!valid) return;
 
-        wizardSpell({
-            actorData: actorData, spellName: "Detect Magic"
-        });
+    let cast = await wizardSpell({actorData: actorData, spellName: "Detect Magic", move: "Cast A Spell"});
+    if (!cast) return;
+
+    await util.coloredChat({
+        actorData: actorData,
+        middleWords: "detects magic"
     });
 }
 
 export async function telepathy(actorData) {
-    sh.validateSpell({actorData: actorData, spell: "Telepathy"}).then(v => {
-        if (!v) return;
+    let valid = await sh.validateSpell({actorData: actorData, spell: "Telepathy", target: true});
+    if (!valid) return;
 
-        wizardSpell({
-            actorData: actorData, spellName: "Telepathy"
-        });
+    let cast = await wizardSpell({actorData: actorData, spellName: "Telepathy", move: "Cast A Spell", target: true});
+    if (!cast) return;
+
+    let targetData = util.getTargets(actorData);
+
+    await util.coloredChat({
+        actorData: actorData,
+        target: targetData.targetActor,
+        middleWords: "establishes a telepathic link with"
     });
 }
 

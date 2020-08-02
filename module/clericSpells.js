@@ -81,7 +81,8 @@ export async function clericSpell({actorData: actorData, spellName: spellName, m
             flavor: flavor,
             spellName: spellName,
             move: move,
-            options: options});
+            options: options
+        });
     } else {
         ui.notifications.warn("Please select a token.");
     }
@@ -95,12 +96,15 @@ export async function clericSpell({actorData: actorData, spellName: spellName, m
  * @returns {Promise<void>}
  */
 export async function guidance(actorData) {
-    sh.validateSpell({actorData: actorData, spell: "Guidance"}).then(v => {
-        if (!v) return;
+    let valid = await sh.validateSpell({actorData: actorData, spell: "Guidance"});
+    if (!valid) return;
 
-        clericSpell({
-            actorData: actorData, spellName: "Guidance"
-        });
+    let cast = await clericSpell({actorData: actorData, spellName: "Guidance", move: "Cast A Spell"});
+    if (!cast) return;
+
+    await util.coloredChat({
+        actorData: actorData,
+        middleWords: "asks for guidance"
     });
 }
 
@@ -110,12 +114,15 @@ export async function guidance(actorData) {
  * @returns {Promise<void>}
  */
 export async function sanctify(actorData) {
-    sh.validateSpell({actorData: actorData, spell: "Sanctify"}).then(v => {
-        if (!v) return;
+    let valid = await sh.validateSpell({actorData: actorData, spell: "Sanctify"});
+    if (!valid) return;
 
-        clericSpell({
-            actorData: actorData, spellName: "Sanctify"
-        });
+    let cast = await clericSpell({actorData: actorData, spellName: "Sanctify", move: "Cast A Spell"});
+    if (!cast) return;
+
+    await util.coloredChat({
+        actorData: actorData,
+        middleWords: "sanctifies some food and water"
     });
 }
 
@@ -279,15 +286,16 @@ export async function cureLightWounds(actorData) {
  * @returns {Promise<void>}
  */
 export async function causeFear(actorData) {
-    sh.validateSpell({actorData: actorData, spell: "Cause Fear"}).then(v => {
-        if (!v) return;
+    let valid = await sh.validateSpell({actorData: actorData, spell: "Cause Fear", target: true});
+    if (!valid) return;
 
-        clericSpell({
-            actorData: actorData, spellName: "Cause Fear"
-        }).then(r => {
-            if (!r) return;
+    let cast = await clericSpell({actorData: actorData, spellName: "Cause Fear", move: "Cast A Spell", target: true});
+    if (!cast) return;
 
-        });
+    await util.coloredChat({
+        actorData: actorData,
+        middleWords: "causes",
+        endWords: "to recoil in fear"
     });
 }
 
@@ -297,12 +305,18 @@ export async function causeFear(actorData) {
  * @returns {Promise<void>}
  */
 export async function detectAlignment(actorData) {
-    sh.validateSpell({actorData: actorData, spell: "Detect Alignment"}).then(v => {
-        if (!v) return;
+    let valid = await sh.validateSpell({actorData: actorData, spell: "Detect Alignment", target: true});
+    if (!valid) return;
 
-        clericSpell({
-            actorData: actorData, spellName: "Detect Alignment"
-        });
+    let cast = await clericSpell({actorData: actorData, spellName: "Detect Alignment", move: "Cast A Spell", target: true});
+    if (!cast) return;
+
+    let targetData = util.getTargets(actorData);
+
+    await util.coloredChat({
+        actorData: actorData,
+        target: targetData.targetActor,
+        middleWords: "detects the alignment of"
     });
 }
 
@@ -375,12 +389,15 @@ export async function magicWeapon(actorData) {
  * @returns {Promise<void>}
  */
 export async function sanctuary(actorData) {
-    sh.validateSpell({actorData: actorData, spell: "Sanctuary"}).then(v => {
-        if (!v) return;
+    let valid = await sh.validateSpell({actorData: actorData, spell: "Sanctuary"});
+    if (!valid) return;
 
-        clericSpell({
-            actorData: actorData, spellName: "Sanctuary"
-        });
+    let cast = await clericSpell({actorData: actorData, spellName: "Sanctuary", move: "Cast A Spell"});
+    if (!cast) return;
+
+    await util.coloredChat({
+        actorData: actorData,
+        middleWords: "creates a Sanctuary"
     });
 }
 
@@ -390,11 +407,14 @@ export async function sanctuary(actorData) {
  * @returns {Promise<void>}
  */
 export async function speakWithDead(actorData) {
-    sh.validateSpell({actorData: actorData, spell: "Speak With Dead"}).then(v => {
-        if (!v) return;
+    let valid = await sh.validateSpell({actorData: actorData, spell: "Speak With Dead"});
+    if (!valid) return;
 
-        clericSpell({
-            actorData: actorData, spellName: "Speak With Dead"
-        });
+    let cast = await clericSpell({actorData: actorData, spellName: "Speak With Dead", move: "Cast A Spell"});
+    if (!cast) return;
+
+    await util.coloredChat({
+        actorData: actorData,
+        middleWords: "speaks with the dead"
     });
 }

@@ -112,7 +112,7 @@ export async function hackAndSlash(actorData) {
             return;
         }
 
-        let targetActor = game.user.targets.values().next().value.actor;
+        let targetData = util.getTargets(actorData);
         let flavor = "Your attack is successful, chose an option.";
         let options = {
             fail: {
@@ -156,9 +156,79 @@ export async function hackAndSlash(actorData) {
             }
         };
 
-        let attack = await basicMove(({actorData: actorData, targetActor: targetActor, flavor: flavor, options: options, title: "Hack And Slash", move: "Hack & Slash"}));
+        let attack = await basicMove(({actorData: actorData, targetActor: targetData.targetActor, flavor: flavor, options: options, title: "Hack And Slash", move: "Hack & Slash"}));
         if (attack) {
-            await util.doDamage({actorData: actorData, targetActor: targetActor, damageMod: attack});
+            await util.doDamage({actorData: actorData, targetData: targetData, damageMod: attack});
+        }
+    } else {
+        ui.notifications.warn("Please select a token.");
+    }
+}
+
+export async function volley(actorData) {
+    if (actorData) {
+        if (game.user.targets.size === 0) {
+            ui.notifications.warn("Action requires a target.");
+            return;
+        }
+
+        let targetData = util.getTargets(actorData);
+        let flavor = "Your attack is successful, chose an option.";
+        let options = {
+            fail: {
+                details: {
+                    middleWords: "Failed to Attack"
+                },
+                style: "background: rgba(255, 0, 0, 0.1)",
+                result: null
+            },
+            success: {
+                details: {
+                    middleWords: "Successfully Attacks"
+                },
+                style: "background: rgba(0, 255, 0, 0.1)",
+                result: "0"
+            },
+            pSuccess: {
+                style: "background: rgba(255, 255, 0, 0.1)",
+                result: [
+                    {
+                        key: "opt1",
+                        icon: `<i class="fas fa-shoe-prints"></i>`,
+                        label: "You have to move to get the shot, placing you in danger",
+                        details: {
+                            middleWords: "Successfully Attacks",
+                            endWords: ", but moves and places themselves in danger."
+                        },
+                        result: "0"
+                    },
+                    {
+                        key: "opt2",
+                        icon: `<i class="fas fa-wind"></i>`,
+                        label: "You have to take what you can get",
+                        details: {
+                            middleWords: "Successfully Attacks",
+                            endWords: ", but takes the shot that was offered"
+                        },
+                        result: "-1d6"
+                    },
+                    {
+                        key: "opt3",
+                        icon: `<i class="fas fa-compress-arrows-alt"></i>`,
+                        label: "You have to take several shots",
+                        details: {
+                            middleWords: "Successfully Attacks",
+                            endWords: ", but it takes more than one shot"
+                        },
+                        result: "0"
+                    }
+                ]
+            }
+        };
+
+        let attack = await basicMove(({actorData: actorData, targetActor: targetData.targetActor, flavor: flavor, options: options, title: "Volley", move: "Volley"}));
+        if (attack) {
+            await util.doDamage({actorData: actorData, targetData: targetData, damageMod: attack});
         }
     } else {
         ui.notifications.warn("Please select a token.");
