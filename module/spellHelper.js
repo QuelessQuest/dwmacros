@@ -1,160 +1,53 @@
 import * as util from './dwUtils.js'
-import {DWconst} from './DWconst.js'
+import * as basic from './basicMoves.js'
 
 /**
- * Cast Spell
- * The basic mechanics for casting a spell and showing the results
+ * CAST SPELL
  * @param actorData
- * @param dialogFlavor
+ * @param targetActor
  * @param flavor
- * @param title
- * @param details
- * @param speaker
+ * @param spellName
+ * @param move
  * @param options
- * @returns {Promise<void>}
+ * @returns {Promise<unknown>}
  */
-export async function castSpell({
-                                    actorData = {},
-                                    dialogFlavor = null,
-                                    flavor = null,
-                                    title = null,
-                                    details = {},
-                                    speaker = null,
-                                    options = []
-                                }) {
+export async function castSpell({actorData = {}, targetActor = {}, flavor = null, spellName = "", move = "", options = {}}) {
 
-    let baseFormula = '2d6';
-    let castingData = actorData.items.find(i => i.name.toLowerCase() === "Cast A Spell".toLowerCase());
-    let ability = castingData.data.data.rollType.toLowerCase();
-    speaker = speaker || ChatMessage.getSpeaker();
-    let mod = castingData.data.data.rollMod;
-    let ongoing = actorData.getFlag("world", "ongoing");
-    let abilityMod = actorData.data.data.abilities[ability].mod;
-    let formula = `${baseFormula}+${abilityMod}`;
-    let sustained = actorData.getFlag("world", "sustained");
-    let sus = 0;
-    if (sustained) {
-        sus = sustained.reduce(function (a, b) {
-            return a + b;
-        }, 0);
-    }
-    if (sus) {
-        formula += `-${sus}`;
-    }
-    let frw = 0;
-    let forward = actorData.getFlag("world", "forward");
-    if (forward) {
-        frw = forward.reduce(function (a, b) {
-            return a + b;
-        }, 0);
-    }
-    if (frw) {
-        formula += `+${frw}`;
-    }
-    if (ongoing) {
-        formula += `+${ongoing}`;
-    } else {
-        ongoing = 0;
-    }
-    if (mod && mod !== 0) {
-        formula += `+${mod}`;
-    }
-
-    let cRoll = new Roll(`${formula}`);
-    cRoll.roll();
-
-    let templateData = {
-        title: title,
+    let cast = await basic.basicMove({
+        actorData: actorData,
+        targetActor: targetActor,
         flavor: flavor,
-        ability: ability.charAt(0).toUpperCase() + ability.slice(1),
-        mod: abilityMod,
-        ongoing: ongoing,
-        sustained: sus ? `-${sus}` : 0,
-        rollDw: await cRoll.render(),
-        style: ""
+        title: spellName,
+        move: move,
+        options: options
+    });
+
+    let success = false;
+    switch (cast) {
+        case "FAILED":
+            let targetData = util.getTargets(actorData);
+            await TokenMagic.deleteFilters(targetData.targetToken);
+            break;
+        case "DISTANCED":
+            await setOngoing(actorData, -1);
+            success = true;
+            break;
+        case "REVOKED":
+            let spell = actorData.data.items.find(i => i.name.toLowerCase() === move.toLowerCase());
+            let sId = spell._id;
+            const item = actorData.getOwnedItem(sId);
+            if (item) {
+                let updatedItem = duplicate(item);
+                updatedItem.data.prepared = true;
+                await actorData.updateOwnedItem(updatedItem);
+            }
+            success = true;
+            break;
+        default:
+            success = true;
     }
-    let chatData = {
-        speaker: speaker,
-    }
-
-    return game.dice3d.showForRoll(cRoll).then(displayed => {
-        if (cRoll.total >= 10) {
-            templateData.details = "Successful Casting";
-            templateData.style = "background: rgba(0, 255, 0, 0.1)";
-            return renderTemplate(DWconst.template, templateData).then(content => {
-                chatData.content = content;
-                ChatMessage.create(chatData);
-                return true;
-            });
-
-        } else if (cRoll.total <= 6) {
-            templateData.details = "Failed Casting";
-            templateData.style = "background: rgba(255, 0, 0, 0.1)";
-            return renderTemplate(DWconst.template, templateData).then(content => {
-                chatData.content = content;
-                ChatMessage.create(chatData);
-                return false;
-            });
-        } else {
-            let opt1 = options.shift();
-            let opt2 = options.shift();
-            let opt3 = options.shift();
-            templateData.style = "background: rgba(255, 255, 0, 0.1)";
-            return new Promise(resolve => {
-                new Dialog({
-                    title: title,
-                    content: dialogFlavor,
-                    buttons: {
-                        opt1: {
-                            icon: opt1.icon,
-                            label: opt1.label,
-                            callback: () => {
-                                templateData.details = opt1.detail;
-                                renderTemplate(DWconst.template, templateData).then(content => {
-                                    chatData.content = content;
-                                    ChatMessage.create(chatData);
-                                });
-                            }
-                        },
-                        opt2: {
-                            icon: opt2.icon,
-                            label: opt2.label,
-                            callback: () => {
-                                templateData.details = opt2.detail;
-                                renderTemplate(DWconst.template, templateData).then(content => {
-                                    chatData.content = content;
-                                    ChatMessage.create(chatData);
-                                });
-                                setOngoing(actorData, -1);
-                            }
-                        },
-                        opt3: {
-                            icon: opt3.icon,
-                            label: opt3.label,
-                            callback: () => {
-                                templateData.details = opt3.detail;
-                                renderTemplate(DWconst.template, templateData).then(content => {
-                                    chatData.content = content;
-                                    ChatMessage.create(chatData);
-                                });
-                                let spell = actorData.data.items.find(i => i.name.toLowerCase() === title.toLowerCase());
-                                let sId = spell._id;
-                                const item = actorData.getOwnedItem(sId);
-                                if (item) {
-                                    let updatedItem = duplicate(item);
-                                    updatedItem.data.prepared = true;
-                                    actorData.updateOwnedItem(updatedItem);
-                                }
-                            }
-                        }
-                    },
-                    close: resolve
-                }, {classes: ["dwmacros", "dialog"]}).render(true);
-
-            }).then(() => {
-                return true;
-            });
-        }
+    return new Promise(resolve => {
+        resolve(success);
     });
 }
 

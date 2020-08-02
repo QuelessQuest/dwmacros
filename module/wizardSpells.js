@@ -1,17 +1,18 @@
 import * as sh from './spellHelper.js'
 import * as util from './dwUtils.js'
-import {DWconst} from './DWconst.js'
+import {getColors} from "./dwUtils.js";
+import {DWconst} from "./DWconst.js";
 
 /**
  * WizardSpell
  * Used to cast all Wizard Spells. Provides the Success with Consequences dialog if necessary
  * @param actorData
  * @param spellName
+ * @param move
  * @param target
- * @param post
- * @returns {Promise<void>}
+ * @returns {Promise<*>}
  */
-export async function wizardSpell({actorData: actorData, spellName: spellName, target: target = false}) {
+export async function wizardSpell({actorData: actorData, spellName: spellName, move: move, target: target = false}) {
     if (actorData) {
         if (target) {
             if (game.user.targets.size === 0) {
@@ -19,26 +20,68 @@ export async function wizardSpell({actorData: actorData, spellName: spellName, t
                 return;
             }
         }
-        let flavor = "Your casting succeeds, however you must select one of the following options.";
-        let options = [
-            {
-                icon: `<i class="fas fa-eye"></i>`,
-                label: "You draw unwelcome attention or put yourself in a spot",
-                detail: `Conditional Casting.<br>${actorData.name} draws unwelcome attention or is put in a spot`
-            },
-            {
-                icon: `<i class="fas fa-bong"></i>`,
-                label: "The spell disturbs the fabric of reality as it is cast",
-                detail: `Conditional Casting.<br>${actorData.name} disturbs the fabric of reality`
-            },
-            {
-                icon: `<i class="fas fa-ban"></i>`,
-                label: "After it is cast, the spell is forgotten",
-                detail: `Conditional Casting.<br>${actorData.name} has forgotten the spell`
-            }
-        ];
 
-        return sh.castSpell(({actorData: actorData, dialogFlavor: flavor, options: options, title: spellName}));
+        let targetData = util.getTargets(actorData);
+        let flavor = "Your casting succeeds, however you must select one of the following options.";
+        let options = {
+            success: {
+                details: {
+                    middleWords: `Successfully Casts ${spellName} on`
+                },
+                style: "background: rgba(0, 255, 0, 0.1)",
+                result: "NORMAL"
+            },
+            fail: {
+                details: {
+                    middleWords: `Failed to Cast ${spellName}`
+                },
+                style: "background: rgba(255, 0, 0, 0.1)",
+                result: "FAILED"
+            },
+            pSuccess: {
+                style: "background: rgba(255, 255, 0, 0.1)",
+                result: [
+                    {
+                        key: "opt1",
+                        icon: `<i class="fas fa-eye"></i>`,
+                        label: "You draw unwelcome attention or put yourself in a spot",
+                        details: {
+                            middleWords: `Successfully Casts ${spellName} on`,
+                            endWords: ", but draws unwelcome attention or is put in a spot"
+                        },
+                        result: "NORMAL"
+                    },
+                    {
+                        key: "opt2",
+                        icon: `<i class="fas fa-bong"></i>`,
+                        label: "The spell disturbs the fabric of reality as it is cast",
+                        details: {
+                            middleWords: `Successfully Casts ${spellName} on`,
+                            endWords: ", but disturbs the fabric of reality"
+                        },
+                        result: "DISTANCED"
+                    },
+                    {
+                        key: "opt3",
+                        icon: `<i class="fas fa-ban"></i>`,
+                        label: "After it is cast, the spell is forgotten",
+                        details: {
+                            middleWords: `Successfully Casts ${spellName} on`,
+                            endWords: ", but the spell has been forgotten"
+                        },
+                        result: "REVOKED"
+                    }]
+            }
+        };
+
+        return await sh.castSpell({
+            actorData: actorData,
+            targetActor: targetData.targetActor,
+            flavor: flavor,
+            spellName: spellName,
+            move: move,
+            options: options
+        });
     } else {
         ui.notifications.warn("Please select a token.");
     }
@@ -125,15 +168,15 @@ export async function telepathy(actorData) {
  */
 export async function invisibility(actorData) {
 
-    let valid = sh.validateSpell({actorData: actorData, spell: "Invisibility"});
+    let valid = await sh.validateSpell({actorData: actorData, spell: "Invisibility"});
     if (!valid) return;
 
-    let cast = wizardSpell({actorData: actorData, spellName: "Invisibility"});
-    let targetData = util.getTargets(actorData);
+    let cast = await wizardSpell({actorData: actorData, spellName: "Invisibility", move: "Cast A Spell"});
     if (!cast) {
-        await TokenMagic.deleteFilters(targetData.targetToken);
         return;
     }
+
+    let targetData = util.getTargets(actorData);
 
     let params =
         [{
@@ -153,7 +196,7 @@ export async function invisibility(actorData) {
                 distance: 10,
                 outerStrength: 8,
                 innerStrength: 0,
-                color: 0xD6E6C3,
+                color: 0xBA91D7,
                 quality: 0.5,
                 animated:
                     {
@@ -206,65 +249,70 @@ export async function magicMissile(actorData) {
     let valid = await sh.validateSpell({actorData: actorData, spell: "Magic Missile", target: true});
     if (!valid) return;
 
-    let cast = await wizardSpell({actorData: actorData, spellName: "Magic Missile", target: true});
+    let cast = await wizardSpell({actorData: actorData, spellName: "Magic Missile", move: "Cast A Spell", target: true});
     if (!cast) return;
 
-    let token = canvas.tokens.controlled[0]
-    let template = "modules/dwmacros/templates/chat/spell-dialog.html";
-    let missile = [{
-        filterType: "electric",
-        color: 0xFFFFFF,
-        time: 0,
-        blend: 1,
-        intensity: 5,
-        autoDestroy: true,
-        animated: {
-            time: {
-                active: true,
-                speed: 0.0020,
-                loopDuration: 1500,
-                loops: 1,
-                animType: "move"
+    let targetData = util.getTargets(actorData);
+    let token = canvas.tokens.controlled[0];
+
+    let missile =
+        [{
+            filterType: "electric",
+            color: 0xFFFFFF,
+            time: 0,
+            blend: 1,
+            intensity: 5,
+            autoDestroy: true,
+            animated: {
+                time: {
+                    active: true,
+                    speed: 0.0020,
+                    loopDuration: 1500,
+                    loops: 1,
+                    animType: "move"
+                }
             }
-        }
-    }];
+        }];
 
     let roll = new Roll("2d4", {});
     roll.roll();
     let rolled = await roll.render();
-    let templateData = {
-        title: "title",
-        flavor: "flavor",
-        rollDw: rolled,
-        style: ""
-    }
-
-    await renderTemplate(template, templateData);
     await game.dice3d.showForRoll(roll);
 
-    let targetToken = game.user.targets.values().next().value;
-    let targetActor = targetToken.actor;
 
-    await sh.launchProjectile(token, targetToken, "modules/dwmacros/assets/mm.png");
+    await sh.launchProjectile(token, targetData.targetToken, "modules/dwmacros/assets/mm.png");
     await TokenMagic.addFiltersOnTargeted(missile);
 
-    if (targetActor.permission !== CONST.ENTITY_PERMISSIONS.OWNER)
-        // We need help applying the damagee, so make a roll message for right-click convenience.
+    if (targetData.targetActor.permission !== CONST.ENTITY_PERMISSIONS.OWNER)
         roll.toMessage({
             speaker: ChatMessage.getSpeaker(),
-            flavor: `${actorData.name} casts Magic Missle on ${targetActor.data.name}.<br>
-                    <p><em>Manually apply ${roll.total} HP of damage to ${targetActor.data.name}</em></p>`
+            flavor: `${actorData.name} casts Magic Missile on ${targetData.targetActor.data.name}.<br>
+                    <p><em>Manually apply ${roll.total} damage to ${targetData.targetActor.data.name}</em></p>`
         });
     else {
-        // We can apply damage automatically, so just show a normal chat message.
-        await util.coloredChat({
-            actorData: actorData,
-            middleWords: "casts Magic Missile on",
-            target: targetActor,
-            endWords: `for ${roll.total} HP`
-        });
-        await game.actors.find(a => a._id === targetActor._id).update({
-            "data.attributes.hp.value": targetActor.data.data.attributes.hp.value - roll.total
+        let gColors = getColors(actorData, targetData.targetActor);
+        let sName = actorData ? actorData.name : "";
+        let tName = targetData.targetActor ? targetData.targetActor.name : "";
+        let templateData = {
+            sourceColor: gColors.source,
+            sourceName: sName,
+            targetColor: gColors.target,
+            targetName: tName,
+            middleWords: "casts Magic Missile at",
+            endWords: `for ${roll.total} damage`,
+            title: "Damage",
+            base: "2d4",
+            rollDw: rolled
+        }
+        renderTemplate(DWconst.template, templateData).then(content => {
+            let chatData = {
+                speaker: ChatMessage.getSpeaker(),
+                content: content
+            };
+            ChatMessage.create(chatData);
+            targetData.targetActor.update({
+                "data.attributes.hp.value": targetData.targetActor.data.data.attributes.hp.value - roll.total
+            })
         });
     }
 }

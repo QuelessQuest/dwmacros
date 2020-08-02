@@ -1,6 +1,5 @@
 import * as sh from './spellHelper.js'
 import * as util from './dwUtils.js'
-import * as basic from './basicMoves.js'
 import {getColors} from "./dwUtils.js";
 import {DWconst} from './DWconst.js'
 
@@ -11,7 +10,6 @@ import {DWconst} from './DWconst.js'
  * @param spellName
  * @param move
  * @param target
- * @param post
  * @returns {Promise<*>}
  */
 export async function clericSpell({actorData: actorData, spellName: spellName, move: move, target: target = false}) {
@@ -49,7 +47,7 @@ export async function clericSpell({actorData: actorData, spellName: spellName, m
                         label: "You draw unwelcome attention or put yourself in a spot",
                         details: {
                             middleWords: `Successfully Casts ${spellName} on`,
-                            endWords: "but draws unwelcome attention or is put in a spot"
+                            endWords: ", but draws unwelcome attention or is put in a spot"
                         },
                         result: "NORMAL"
                     },
@@ -59,17 +57,17 @@ export async function clericSpell({actorData: actorData, spellName: spellName, m
                         label: "Your casting distances you from your deity",
                         details: {
                             middleWords: `Successfully Casts ${spellName} on`,
-                            endWords: "But distances themselves from their deity"
+                            endWords: ", but distances themselves from their deity"
                         },
                         result: "DISTANCED"
                     },
                     {
                         key: "opt3",
                         icon: `<i class="fas fa-ban"></i>`,
-                        label: "After you cast it, the spell is revoked by your deity",
+                        label: "After it is cast, the spell is revoked by your deity",
                         details: {
                             middleWords: `Successfully Casts ${spellName} on`,
-                            endWords: "but has the spell revoked by their deity"
+                            endWords: ", but has the spell revoked by their deity"
                         },
                         result: "REVOKED"
                     }
@@ -77,42 +75,13 @@ export async function clericSpell({actorData: actorData, spellName: spellName, m
             }
         };
 
-        let cast = await basic.basicMove({
+        return await sh.castSpell({
             actorData: actorData,
             targetActor: targetData.targetActor,
             flavor: flavor,
-            title: spellName,
+            spellName: spellName,
             move: move,
-            options: options
-        });
-
-        let success = false;
-        switch (cast) {
-            case "FAILED":
-                let targetData = util.getTargets(actorData);
-                await TokenMagic.deleteFilters(targetData.targetToken);
-                break;
-            case "DISTANCED":
-                await sh.setOngoing(actorData, -1);
-                success = true;
-                break;
-            case "REVOKED":
-                let spell = actorData.data.items.find(i => i.name.toLowerCase() === title.toLowerCase());
-                let sId = spell._id;
-                const item = actorData.getOwnedItem(sId);
-                if (item) {
-                    let updatedItem = duplicate(item);
-                    updatedItem.data.prepared = true;
-                    await actorData.updateOwnedItem(updatedItem);
-                }
-                success = true;
-                break;
-            default:
-                success = true;
-        }
-        return new Promise(resolve => {
-            resolve(success);
-        });
+            options: options});
     } else {
         ui.notifications.warn("Please select a token.");
     }
@@ -273,8 +242,8 @@ export async function cureLightWounds(actorData) {
     if (targetData.targetActor.permission !== CONST.ENTITY_PERMISSIONS.OWNER)
         roll.toMessage({
             speaker: ChatMessage.getSpeaker(),
-            flavor: `${actorData.name} casts Cure Light Wounds on ${targetActor.data.name}.<br>
-                            <p><em>Manually apply ${maxHeal} HP of healing to ${targetActor.data.name}</em></p>`
+            flavor: `${actorData.name} casts Cure Light Wounds on ${targetData.targetActor.data.name}.<br>
+                            <p><em>Manually apply ${maxHeal} HP of healing to ${targetData.targetActor.data.name}</em></p>`
         });
     else {
         let gColors = getColors(actorData, targetData.targetActor);
@@ -346,7 +315,7 @@ export async function magicWeapon(actorData) {
     let valid = await sh.validateSpell({actorData: actorData, spell: "Magic Weapon"});
     if (!valid) return;
 
-    let cast = await clericSpell({actorData: actorData, spellName: "Magic Weapon"});
+    let cast = await clericSpell({actorData: actorData, spellName: "Magic Weapon", move: "Cast A Spell"});
     if (!cast) return;
 
     let currentMisc = actorData.data.data.attributes.damage.misc;
@@ -379,6 +348,7 @@ export async function magicWeapon(actorData) {
             targetName: actorData.name,
             sustained: true,
             filter: true,
+            targetId: canvas.tokens.controlled[0].id,
             targetToken: canvas.tokens.controlled[0].id,
             damage: "1d4",
             middleWords: "cancels Magic Weapon"
