@@ -1,5 +1,3 @@
-import * as util from './dwUtils.js'
-
 /**
  * Provides a dialog to chose a new shape. Token image will be updated to reflect the selection.
  * @returns {Promise<void>}

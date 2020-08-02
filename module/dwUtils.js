@@ -35,33 +35,34 @@ export function getColors(actorData, target) {
  * @param startingWords
  * @param middleWords
  * @param endWords
+ * @param showChat
  * @returns {Promise<void>}
  */
 export async function coloredChat({
-                                actorData = null,
-                                target = null,
-                                startingWords = "",
-                                middleWords = "",
-                                endWords = ""
-                            }) {
+                                      actorData = null,
+                                      target = null,
+                                      startingWords = "",
+                                      middleWords = "",
+                                      endWords = ""
+                                  }) {
     let template = "modules/dwmacros/templates/chat/defaultWithColor.html";
 
-    let gcolors = getColors(actorData, target);
+    let gColors = getColors(actorData, target);
 
     let sName = actorData ? actorData.name : "";
     let tName = target ? target.name : "";
 
     let templateData = {
-        sourceColor: gcolors.source,
+        sourceColor: gColors.source,
         sourceName: sName,
-        targetColor: gcolors.target,
+        targetColor: gColors.target,
         targetName: tName,
         startingWords: startingWords,
         middleWords: middleWords,
         endWords: endWords
     }
 
-    await renderTemplate(template, templateData).then(content => {
+    return renderTemplate(template, templateData).then(content => {
         ChatMessage.create({
             speaker: ChatMessage.getSpeaker(),
             content: content
@@ -88,5 +89,170 @@ export function getTargets(actorData) {
     return {
         targetActor: targetActor,
         targetToken: targetToken
+    }
+}
+
+/**
+ * PROCESS CHOICE
+ * @param options
+ * @param flavor
+ * @param templateData
+ * @param title
+ * @param template
+ * @param chatData
+ * @returns {Promise<unknown>}
+ */
+export async function processChoice({
+                                        options = {},
+                                        flavor = null,
+                                        templateData = {},
+                                        title = null,
+                                        template = null,
+                                        chatData = {}
+                                    }) {
+
+    return new Promise(resolve => {
+        const dialog = new Dialog({
+            title: title,
+            content: flavor,
+            buttons: getButtons(options, template, templateData, chatData, resolve),
+        }, {width: 450, classes: ["dwmacros", "dialog"]});
+        dialog.render(true);
+        console.log(dialog);
+    });
+}
+
+/**
+ * GET BUTTONS
+ * @param options
+ * @param template
+ * @param templateData
+ * @param chatData
+ * @param resolve
+ * @returns {{}}
+ */
+function getButtons(options, template, templateData, chatData, resolve) {
+    let buttonData = {};
+    for (let opt of options) {
+        buttonData[opt.key] = {
+            icon: opt.icon,
+            label: opt.label,
+            callback: async () => {
+                templateData.startingWords = opt.details.startingWords ? opt.details.startingWords : "";
+                templateData.middleWords = opt.details.middleWords ? opt.details.middleWords : "";
+                templateData.endWords = opt.details.endWords ? opt.details.endWords : "";
+                chatData.content = await renderTemplate(template, templateData);
+                await ChatMessage.create(chatData);
+                resolve(opt.result);
+            }
+        };
+    }
+    return buttonData;
+}
+
+/**
+ * RENDER DICE RESULTS
+ * @param options
+ * @param template
+ * @param templateData
+ * @param speaker
+ * @param flavor
+ * @param title
+ * @returns {Promise<*>}
+ */
+export async function renderDiceResults({
+                                            options = {},
+                                            template = "",
+                                            templateData = {},
+                                            speaker = null,
+                                            flavor = "",
+                                            title: title
+                                        }) {
+
+    speaker = speaker || ChatMessage.getSpeaker();
+    let chatData = {
+        speaker: speaker,
+    }
+
+    let details = options.details;
+    templateData.style = options.style;
+
+
+    if (options.result instanceof Array) {
+        return await processChoice({
+            options: options.result,
+            flavor: flavor,
+            templateData: templateData,
+            template: template,
+            title: title,
+            chatData: chatData
+        });
+    } else {
+        templateData.startingWords = details.startingWords ? details.startingWords : "";
+        templateData.middleWords = details.middleWords ? details.middleWords : "";
+        templateData.endWords = details.endWords ? details.endWords : "";
+        chatData.content = await renderTemplate(template, templateData);
+        await ChatMessage.create(chatData);
+        return options.result;
+    }
+}
+
+export async function doDamage({actorData = null, targetActor = null, damageMod = null}) {
+
+    let base = actorData.data.data.attributes.damage.value;
+    let formula = base;
+    let misc = "";
+    if (actorData.data.data.attributes.damage.misc) {
+        misc = actorData.data.data.attributes.damage.misc;
+        formula += `+${misc}`;
+    }
+    if (damageMod) {
+        formula += `+${damageMod}`;
+    }
+    let roll = new Roll(formula, {});
+    roll.roll();
+    let rolled = await roll.render();
+
+    let template = "modules/dwmacros/templates/chat/damage-dialog.html";
+
+    let damage = roll.total;
+    await game.dice3d.showForRoll(roll);
+
+    if (targetActor.permission !== CONST.ENTITY_PERMISSIONS.OWNER)
+        roll.toMessage({
+            speaker: ChatMessage.getSpeaker(),
+            flavor: `${actorData.name} hits ${targetActor.data.name}.<br>
+                            <p><em>Manually apply ${damage} damage to ${targetActor.data.name}</em></p>`
+        });
+    else {
+        let gColors = getColors(actorData, targetActor);
+        let sName = actorData ? actorData.name : "";
+        let tName = targetActor ? targetActor.name : "";
+
+        let templateData = {
+            sourceColor: gColors.source,
+            sourceName: sName,
+            targetColor: gColors.target,
+            targetName: tName,
+            middleWords: "hits",
+            endWords: `for ${damage} damage`,
+            title: "Damage",
+            base: base,
+            misc: misc,
+            bonus: damageMod,
+            rollDw: rolled
+        }
+
+        renderTemplate(template, templateData).then(content => {
+            let chatData = {
+                speaker: ChatMessage.getSpeaker(),
+                content: content
+            };
+            ChatMessage.create(chatData);
+            let hp = targetActor.data.data.attributes.hp.value - damage;
+            targetActor.update({
+                "data.attributes.hp.value": hp < 0 ? 0 : hp
+            })
+        });
     }
 }

@@ -1,0 +1,33 @@
+<section class="dw-chat-card">
+    <div class="cell cell--chat dwmacros">
+        <h2 class="cell__title">{{title}}</h2>
+        {{#if flavor}}
+        <div class="row">
+            <em>{{flavor}}</em>
+        </div>
+        {{/if}}
+        <div class="dice-mod">
+            <div class="mod-flex">
+                <div class="marg-left">
+                    <b>Base:</b> {{base}}
+                </div>
+                <div class="marg-left">
+                    <b>Misc:</b> {{misc}}
+                </div>
+            </div>
+            <div class="mod-flex">
+                <div class="marg-left">
+                    <b>Bonus:</b> {{bonus}}
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            {{startingWords}}<span style="color:{{sourceColor}}">{{sourceName}}</span> {{middleWords}} <span style="color:{{targetColor}}">{{targetName}}</span> {{endWords}}
+        </div>
+        {{#if rollDw}}
+        <div class="roll" style="{{style}}">
+            {{{rollDw}}}
+        </div>
+        {{/if}}
+    </div>
+</section>

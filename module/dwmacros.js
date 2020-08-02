@@ -4,6 +4,7 @@ import * as ws from './wizardSpells.js'
 import * as cmn from './commonSpells.js'
 import * as dm from './druidMoves.js'
 import * as util from './dwUtils.js'
+import * as basic from './basicMoves.js'
 
 export function DWMacros() {
 
@@ -110,6 +111,14 @@ export function DWMacros() {
     }
 
     /**
+     * BASIC MOVES ========================================
+     */
+
+    async function doHackAndSlash(actorData) {
+        return basic.hackAndSlash(actorData);
+    }
+
+    /**
      * CLASS MOVES ========================================
      */
     async function druidShapeshift(actorData) {
@@ -146,6 +155,7 @@ export function DWMacros() {
         castTelepathy: castTelepathy,
         castInvisibility: castInvisibility,
         castAlarm: castAlarm,
+        doHackAndSlash: doHackAndSlash,
         druidShapeshift: druidShapeshift,
         castMagicMissile: castMagicMissile,
         prepareSpells: prepareSpells,
@@ -161,3 +171,21 @@ Hooks.on("ready", () => {
     console.log("DW Hook -> ready");
     window.DWMacros = DWM;
 });
+
+/*
+Hooks.on('renderChatMessage', (data, html, options) => {
+    console.log("CHAT HOOK");
+    html.find('.colored-dialog').
+    // Determine visibility.
+    let chatData = data.data;
+    const whisper = chatData.whisper || [];
+    const isBlind = whisper.length && chatData.blind;
+    const isVisible = (whisper.length) ? game.user.isGM || whisper.includes(game.user._id) || (!isBlind) : true;
+    if (!isVisible) {
+        html.find('.dice-formula').text('???');
+        html.find('.dice-total').text('?');
+        html.find('.dice-tooltip').remove();
+    }
+});
+
+ */

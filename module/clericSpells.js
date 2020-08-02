@@ -195,7 +195,8 @@ export async function cureLightWounds(actorData) {
         rollDw: rolled,
         style: ""
     }
-    let content = await renderTemplate(template, templateData)
+
+    await renderTemplate(template, templateData)
     await game.dice3d.showForRoll(roll);
     let targetActor = game.user.targets.values().next().value.actor;
     let maxHeal = Math.clamped(roll.result, 0,

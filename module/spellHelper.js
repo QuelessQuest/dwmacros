@@ -1,4 +1,3 @@
-import SpellCastingDialog from "./objects/spell-casting-dialog.js";
 import * as util from './dwUtils.js'
 
 /**
@@ -23,8 +22,7 @@ export async function castSpell({
                                     template = null,
                                     details = {},
                                     speaker = null,
-                                    options = [],
-                                    dialogOptions = {}
+                                    options = []
                                 }) {
 
     let baseFormula = '2d6';
@@ -96,7 +94,7 @@ export async function castSpell({
             let opt3 = options.shift();
             templateData.style = "background: rgba(255, 255, 0, 0.1)";
             return new Promise(resolve => {
-                new SpellCastingDialog({
+                new Dialog({
                     title: title,
                     content: dialogFlavor,
                     buttons: {
@@ -144,7 +142,7 @@ export async function castSpell({
                         }
                     },
                     close: resolve
-                }, dialogOptions).render(true);
+                }, {classes: ["dwmacros", "dialog"]}).render(true);
 
             }).then(() => {
                 return true;
@@ -219,7 +217,6 @@ async function removeSpellFlag(actorData, flag, {spell = "", targetName = ""}) {
     let theItem = null;
 
     flagItem.forEach(item => {
-        console.log(item);
         if (item.spell === spell) {
             if (item.data.targetName === targetName) {
                 theItem = item;
@@ -330,7 +327,7 @@ export async function removeActiveSpell(actorData, {spell = "", targetName = ""}
     }
 
     if (data.updateData) {
-        switch(data.updateType) {
+        switch (data.updateType) {
             case "Token":
                 let xx = canvas.tokens.placeables.filter(placeable => placeable.id === data.targetToken);
                 let targetToken = xx[0];
