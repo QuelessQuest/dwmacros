@@ -1,7 +1,7 @@
 import * as sh from './spellHelper.js'
 import * as util from './dwUtils.js'
 import {getColors} from "./dwUtils.js";
-import {DWconst} from "./DWconst.js";
+import {DWMacrosConfig} from "./DWMacrosConfig.js";
 
 /**
  * WizardSpell
@@ -325,7 +325,7 @@ export async function magicMissile(actorData) {
             base: "2d4",
             rollDw: rolled
         }
-        renderTemplate(DWconst.template, templateData).then(content => {
+        renderTemplate(DWMacrosConfig.template, templateData).then(content => {
             let chatData = {
                 speaker: ChatMessage.getSpeaker(),
                 content: content

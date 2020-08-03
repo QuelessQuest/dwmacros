@@ -4,6 +4,7 @@ import * as ws from './wizardSpells.js'
 import * as cmn from './commonSpells.js'
 import * as dm from './druidMoves.js'
 import * as basic from './basicMoves.js'
+import {DWMacrosConfig} from './DWMacrosConfig.js';
 import ChatDWMacros from './entity.js';
 
 export function DWMacros() {
@@ -173,11 +174,24 @@ export function DWMacros() {
 
 export const DWM = DWMacros();
 
+Hooks.once("init", async function() {
+    CONFIG.DWMacros = DWMacrosConfig;
+});
+
 Hooks.on("ready", () => {
     console.log("DW Hook -> ready");
     window.DWMacros = DWM;
 });
 
 Hooks.on('renderChatMessage', (data, html, options) => {
-
+    const type = html.find(".dialogType")
+    let dieClass = "";
+    for (const dType in CONFIG.DWMacros.dialogTypes) {
+        const dd = CONFIG.DWMacros.dialogTypes[dType];
+        if (type.hasClass(dd)) {
+            dieClass = CONFIG.DWMacros.dialogClasses[dd];
+            html.find(".dice-formula").addClass(dieClass);
+            html.find(".dice-total").addClass(dieClass);
+        }
+    }
 });

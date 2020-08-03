@@ -1,5 +1,4 @@
 import * as util from './dwUtils.js'
-import {DWconst} from './DWconst.js'
 
 export async function basicMove({
                                     actorData = {},
@@ -63,7 +62,6 @@ export async function basicMove({
         targetColor: gColors.target,
         sourceName: actorData ? actorData.name : "",
         targetName: targetActor ? targetActor.name : "",
-        style: "",
         startingWords: "",
         middleWords: "",
         endWords: ""
@@ -73,7 +71,7 @@ export async function basicMove({
     if (cRoll.total >= 10) {
         return await util.renderDiceResults({
             options: options.success,
-            template: DWconst.template,
+            template: CONFIG.DWMacros.template,
             templateData: templateData,
             speaker: speaker,
             flavor: flavor,
@@ -82,7 +80,7 @@ export async function basicMove({
     } else if (cRoll.total <= 6) {
         return await util.renderDiceResults({
             options: options.fail,
-            template: DWconst.template,
+            template: CONFIG.DWMacros.template,
             templateData: templateData,
             speaker: speaker,
             flavor: flavor,
@@ -91,7 +89,7 @@ export async function basicMove({
     } else {
         return await util.renderDiceResults({
             options: options.pSuccess,
-            template: DWconst.template,
+            template: CONFIG.DWMacros.template,
             templateData: templateData,
             speaker: speaker,
             flavor: flavor,
@@ -116,21 +114,21 @@ export async function hackAndSlash(actorData) {
         let flavor = "Your attack is successful, chose an option.";
         let options = {
             fail: {
+                dialogType: CONFIG.DWMacros.dialogTypes.fail,
                 details: {
                     middleWords: "Failed to Attack"
                 },
-                style: "background: rgba(255, 0, 0, 0.1)",
                 result: null
             },
             pSuccess: {
+                dialogType: CONFIG.DWMacros.dialogTypes.partial,
                 details: {
                     middleWords: "Successfully Attacks, but opens themselves up to Attacks from"
                 },
-                style: "background: rgba(255, 255, 0, 0.1)",
                 result: "0"
             },
             success: {
-                style: "background: rgba(0, 255, 0, 0.1)",
+                dialogType: CONFIG.DWMacros.dialogTypes.success,
                 result: [
                     {
                         key: "opt1",
@@ -179,18 +177,18 @@ export async function volley(actorData) {
                 details: {
                     middleWords: "Failed to Attack"
                 },
-                style: "background: rgba(255, 0, 0, 0.1)",
+                dialogType: CONFIG.DWMacros.dialogTypes.fail,
                 result: null
             },
             success: {
                 details: {
                     middleWords: "Successfully Attacks"
                 },
-                style: "background: rgba(0, 255, 0, 0.1)",
+                dialogType: CONFIG.DWMacros.dialogTypes.success,
                 result: "0"
             },
             pSuccess: {
-                style: "background: rgba(255, 255, 0, 0.1)",
+                dialogType: CONFIG.DWMacros.dialogTypes.partial,
                 result: [
                     {
                         key: "opt1",

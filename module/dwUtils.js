@@ -1,5 +1,4 @@
-import {DWconst} from './DWconst.js'
-import ChatDWMacros from './entity.js';
+import {DWMacrosConfig} from './DWMacrosConfig.js'
 
 /**
  * If the actor and or target are characters, return the player color
@@ -177,8 +176,7 @@ export async function renderDiceResults({
     }
 
     let details = options.details;
-    templateData.style = options.style;
-
+    templateData.dialogType = options.dialogType;
 
     if (options.result instanceof Array) {
         return await processChoice({
@@ -193,6 +191,8 @@ export async function renderDiceResults({
         templateData.startingWords = details.startingWords ? details.startingWords : "";
         templateData.middleWords = details.middleWords ? details.middleWords : "";
         templateData.endWords = details.endWords ? details.endWords : "";
+        console.log("TEMPLATE DATA");
+        console.log(templateData);
         chatData.content = await renderTemplate(template, templateData);
         await ChatMessage.create(chatData);
         return options.result;
@@ -231,6 +231,7 @@ export async function doDamage({actorData = null, targetData = null, damageMod =
         let tName = targetData.targetActor ? targetData.targetActor.name : "";
 
         let templateData = {
+            dialogType: CONFIG.DWMacros.dialogTypes.damage,
             sourceColor: gColors.source,
             sourceName: sName,
             targetColor: gColors.target,
@@ -244,13 +245,13 @@ export async function doDamage({actorData = null, targetData = null, damageMod =
             rollDw: rolled
         }
 
-        renderTemplate(DWconst.template, templateData).then(content => {
+        renderTemplate(DWMacrosConfig.template, templateData).then(content => {
             let chatData = {
                 speaker: ChatMessage.getSpeaker(),
                 content: content
             };
 
-            ChatMessage.create(chatData, {test: "x"});
+            ChatMessage.create(chatData);
 
             let hp = targetData.targetActor.data.data.attributes.hp.value - damage;
             targetData.targetActor.update({
@@ -261,8 +262,4 @@ export async function doDamage({actorData = null, targetData = null, damageMod =
             }
         });
     }
-}
-
-async function setFlag(cm) {
-    await cm.setFlag("world", "dialogType", "damage");
 }

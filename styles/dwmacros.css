@@ -10,6 +10,22 @@
     margin-bottom: 10px;
 }
 
+.dwmacros .dieFail {
+    background: #EEAA8880;
+}
+
+.dwmacros .dieSuccess {
+    background: #BBBB8880;
+}
+
+.dwmacros .diePartial {
+    background: #EEDD9980;
+}
+
+.dwmacros .dieDamage {
+    background: #DBE6EC;
+}
+
 .dwmacros .dialog-buttons {
     -ms-flex-direction: column !important;
     flex-direction: column !important;
@@ -79,7 +95,7 @@
     margin: 0 0 10px 0;
     line-height: 24px;
     text-align: left;
-    background: rgba(0, 0, 0, 0.1);
+    background: #DDCCBB80;
     border: 1px solid #999;
     border-radius: 3px;
     box-shadow: 0 0 2px #FFF inset;
