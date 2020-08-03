@@ -3,8 +3,8 @@ import * as cs from './clericSpells.js'
 import * as ws from './wizardSpells.js'
 import * as cmn from './commonSpells.js'
 import * as dm from './druidMoves.js'
-import * as util from './dwUtils.js'
 import * as basic from './basicMoves.js'
+import ChatDWMacros from './entity.js';
 
 export function DWMacros() {
 
@@ -63,6 +63,7 @@ export function DWMacros() {
     async function castAlarm(actorData) {
         return ws.alarm(actorData);
     }
+
     async function castCharmPerson(actorData) {
         return ws.charmPerson(actorData);
     }
@@ -175,4 +176,8 @@ export const DWM = DWMacros();
 Hooks.on("ready", () => {
     console.log("DW Hook -> ready");
     window.DWMacros = DWM;
+});
+
+Hooks.on('renderChatMessage', (data, html, options) => {
+
 });

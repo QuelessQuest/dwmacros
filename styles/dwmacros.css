@@ -6,6 +6,10 @@
     /* Tags */
 }
 
+.dwmacros .words {
+    margin-bottom: 10px;
+}
+
 .dwmacros .dialog-buttons {
     -ms-flex-direction: column !important;
     flex-direction: column !important;

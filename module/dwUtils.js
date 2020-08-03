@@ -1,4 +1,5 @@
 import {DWconst} from './DWconst.js'
+import ChatDWMacros from './entity.js';
 
 /**
  * If the actor and or target are characters, return the player color
@@ -198,7 +199,7 @@ export async function renderDiceResults({
     }
 }
 
-export async function doDamage({actorData = null, targetData = null, damageMod = null}) {
+export async function doDamage({actorData = null, targetData = null, damageMod = null, title = ""}) {
 
     let base = actorData.data.data.attributes.damage.value;
     let formula = base;
@@ -236,7 +237,7 @@ export async function doDamage({actorData = null, targetData = null, damageMod =
             targetName: tName,
             middleWords: "hits",
             endWords: `for ${damage} damage`,
-            title: "Damage",
+            title: title + " Damage",
             base: base,
             misc: misc,
             bonus: damageMod,
@@ -248,7 +249,9 @@ export async function doDamage({actorData = null, targetData = null, damageMod =
                 speaker: ChatMessage.getSpeaker(),
                 content: content
             };
-            ChatMessage.create(chatData);
+
+            ChatMessage.create(chatData, {test: "x"});
+
             let hp = targetData.targetActor.data.data.attributes.hp.value - damage;
             targetData.targetActor.update({
                 "data.attributes.hp.value": hp < 0 ? 0 : hp
@@ -258,4 +261,8 @@ export async function doDamage({actorData = null, targetData = null, damageMod =
             }
         });
     }
+}
+
+async function setFlag(cm) {
+    await cm.setFlag("world", "dialogType", "damage");
 }

@@ -158,7 +158,7 @@ export async function hackAndSlash(actorData) {
 
         let attack = await basicMove(({actorData: actorData, targetActor: targetData.targetActor, flavor: flavor, options: options, title: "Hack And Slash", move: "Hack & Slash"}));
         if (attack) {
-            await util.doDamage({actorData: actorData, targetData: targetData, damageMod: attack});
+            await util.doDamage({actorData: actorData, targetData: targetData, damageMod: attack, title: "Hack And Slash"});
         }
     } else {
         ui.notifications.warn("Please select a token.");
@@ -228,7 +228,7 @@ export async function volley(actorData) {
 
         let attack = await basicMove(({actorData: actorData, targetActor: targetData.targetActor, flavor: flavor, options: options, title: "Volley", move: "Volley"}));
         if (attack) {
-            await util.doDamage({actorData: actorData, targetData: targetData, damageMod: attack});
+            await util.doDamage({actorData: actorData, targetData: targetData, damageMod: attack, title: "Volley"});
         }
     } else {
         ui.notifications.warn("Please select a token.");
