@@ -26,5 +26,5 @@
   "socket": true,
   "url": "https://github.com/QuelessQuest/dwmacros",
   "manifest": "https://raw.githubusercontent.com/QuelessQuest/dwmacros/master/module.json",
-  "download": "https://github.com/QuelessQuest/dwmacros/releases/download/v002/dwmacros.zip"
+  "download": "https://github.com/QuelessQuest/dwmacros/releases/download/v010/dwmacros-0.1.0.zip"
 }
