@@ -2,7 +2,7 @@
   "name": "dwmacros",
   "title": "DWMacros",
   "description": "<p>Additional Scripts and Macros for Dungeon World</p>",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "compatibleCoreVersion": "0.6.5",
   "minimumCoreVersion": "0.6.0",
   "author": "Quest",
