@@ -28,18 +28,18 @@ export async function wizardSpell({actorData: actorData, spellName: spellName, m
                 details: {
                     middleWords: `Successfully Casts ${spellName} on`
                 },
-                style: "background: rgba(0, 255, 0, 0.1)",
+                dialogType: CONFIG.DWMacros.dialogTypes.success,
                 result: "NORMAL"
             },
             fail: {
                 details: {
                     middleWords: `Failed to Cast ${spellName}`
                 },
-                style: "background: rgba(255, 0, 0, 0.1)",
+                dialogType: CONFIG.DWMacros.dialogTypes.fail,
                 result: "FAILED"
             },
             pSuccess: {
-                style: "background: rgba(255, 255, 0, 0.1)",
+                dialogType: CONFIG.DWMacros.dialogTypes.partial,
                 result: [
                     {
                         key: "opt1",

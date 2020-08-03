@@ -296,6 +296,10 @@ export async function removeForward(target, spell) {
  * @returns {Promise<boolean>}
  */
 export async function validateSpell({actorData: actorData, spell: spell, target: target}) {
+    if (!actorData) {
+        ui.notifications.warn("Please select the caster");
+        return false;
+    }
     let hasSpell = actorData.items.find(i => i.name.toLowerCase() === spell.toLowerCase());
     if (hasSpell === null) {
         ui.notifications.warn(`${actorData.name} does not know how to cast ${spell}`);

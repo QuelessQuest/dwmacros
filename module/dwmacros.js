@@ -5,7 +5,6 @@ import * as cmn from './commonSpells.js'
 import * as dm from './druidMoves.js'
 import * as basic from './basicMoves.js'
 import {DWMacrosConfig} from './DWMacrosConfig.js';
-import ChatDWMacros from './entity.js';
 
 export function DWMacros() {
 
