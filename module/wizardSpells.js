@@ -90,22 +90,28 @@ export async function wizardSpell({actorData: actorData, spellName: spellName, m
 // CANTRIPS =======================================================================================
 
 export async function prestidigitation(actorData) {
-    sh.validateSpell({actorData: actorData, spell: "Prestidigitation"}).then(v => {
-        if (!v) return;
+    let valid = await sh.validateSpell({actorData: actorData, spell: "Prestidigitation", target: true});
+    if (!valid) return;
 
-        wizardSpell({
-            actorData: actorData, spellName: "Prestidigitation"
-        });
+    let cast = await clericSpell({actorData: actorData, spellName: "Prestidigitation", move: "Cast A Spell", target: true});
+    if (!cast) return;
+
+    await util.coloredChat({
+        actorData: actorData,
+        middleWords: "prestidigitates",
     });
 }
 
 export async function unseenServant(actorData) {
-    sh.validateSpell({actorData: actorData, spell: "Unseen Servant"}).then(v => {
-        if (!v) return;
+    let valid = await sh.validateSpell({actorData: actorData, spell: "Unseen Servant", target: true});
+    if (!valid) return;
 
-        wizardSpell({
-            actorData: actorData, spellName: "Unseen Servant"
-        });
+    let cast = await clericSpell({actorData: actorData, spellName: "Unseen Servant", move: "Cast A Spell", target: true});
+    if (!cast) return;
+
+    await util.coloredChat({
+        actorData: actorData,
+        middleWords: "summons an unseen servant",
     });
 }
 

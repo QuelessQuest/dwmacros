@@ -4,6 +4,7 @@ import * as ws from './wizardSpells.js'
 import * as cmn from './commonSpells.js'
 import * as dm from './druidMoves.js'
 import * as basic from './basicMoves.js'
+import * as tm from './thiefMoves.js'
 import {DWMacrosConfig} from './DWMacrosConfig.js';
 
 export function DWMacros() {
@@ -130,6 +131,10 @@ export function DWMacros() {
         return dm.shapeshift(actorData);
     }
 
+    async function thiefBackstab(actorData) {
+        return tm.backstab(actorData);
+    }
+
 
     async function showActor(actorData) {
         console.log(actorData);
@@ -163,6 +168,7 @@ export function DWMacros() {
         doHackAndSlash: doHackAndSlash,
         doVolley: doVolley,
         druidShapeshift: druidShapeshift,
+        thiefBackstab: thiefBackstab,
         castMagicMissile: castMagicMissile,
         prepareSpells: prepareSpells,
         showToken: showToken,

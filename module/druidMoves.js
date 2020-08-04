@@ -48,6 +48,7 @@ export async function shapeshift(actorData) {
         ];
 
     let token = canvas.tokens.controlled[0];
+    await TokenMagic.addFiltersOnSelected(params);
     let d = new Dialog({
         title: 'Shapeshift',
         content: "<p>Select a form</p>" +
@@ -91,7 +92,7 @@ export async function shapeshift(actorData) {
             "</select>",
         buttons: {
             ok: {
-                icon: '<i class="fas fa-check"></i>',
+                icon: '<i class="fas fa-cat"></i>',
                 label: "Shift",
                 callback: () => {
                     TokenMagic.deleteFiltersOnSelected();
@@ -110,5 +111,4 @@ export async function shapeshift(actorData) {
         }
     });
     d.render(true);
-    TokenMagic.addFiltersOnSelected(params);
 }

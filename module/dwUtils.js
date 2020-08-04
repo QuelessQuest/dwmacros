@@ -1,6 +1,7 @@
 import {DWMacrosConfig} from './DWMacrosConfig.js'
 
 /**
+ * GET COLORS
  * If the actor and or target are characters, return the player color
  * @param actorData
  * @param target
@@ -199,6 +200,36 @@ export async function renderDiceResults({
     }
 }
 
+/**
+ * VALIDATE MOVE
+ * Determine if the user has the move in question
+ * @param actorData
+ * @param move
+ * @param target
+ * @returns {Promise<boolean>}
+ */
+export async function validateMove({actorData: actorData, move: move, target: target}) {
+    if (!actorData) {
+        ui.notifications.warn("Please select a character");
+        return false;
+    }
+    let hasMove = actorData.items.find(i => i.name.toLowerCase() === move.toLowerCase());
+    if (hasMove === null) {
+        ui.notifications.warn(`${actorData.name} does not know ${move}`);
+        return false;
+    }
+    return true;
+}
+
+/**
+ * DO DAMAGE
+ * Roll and apply damage to a target
+ * @param actorData
+ * @param targetData
+ * @param damageMod
+ * @param title
+ * @returns {Promise<void>}
+ */
 export async function doDamage({actorData = null, targetData = null, damageMod = null, title = ""}) {
 
     let base = actorData.data.data.attributes.damage.value;
